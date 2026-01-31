@@ -1,0 +1,68 @@
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: unifecaf-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-unifecaf}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-unifecaf123}
+      POSTGRES_DB: ${POSTGRES_DB:-portal_aluno}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-unifecaf} -d ${POSTGRES_DB:-portal_aluno}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - unifecaf-network
+
+  # Backend API (FastAPI)
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: unifecaf-api
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-unifecaf}:${POSTGRES_PASSWORD:-unifecaf123}@db:5432/${POSTGRES_DB:-portal_aluno}
+      JWT_SECRET: ${JWT_SECRET:-super-secret-key-change-in-production}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:8000,http://127.0.0.1:3000,http://web:3000}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f uvicorn || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - unifecaf-network
+
+  # Frontend Web (Next.js)
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: unifecaf-web
+    environment:
+      NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://localhost:8000}
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - unifecaf-network
+
+volumes:
+  postgres_data:
+
+networks:
+  unifecaf-network:
+    driver: bridge
