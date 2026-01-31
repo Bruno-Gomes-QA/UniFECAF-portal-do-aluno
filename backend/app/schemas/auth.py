@@ -11,8 +11,10 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 class LoginRequest(BaseModel):
     """Login request schema."""
 
-    email: EmailStr = Field(..., description="User email address")
-    password: str = Field(..., min_length=1, description="User password")
+    email: EmailStr = Field(
+        ..., description="User email address", examples=["demo@unifecaf.edu.br"]
+    )
+    password: str = Field(..., min_length=1, description="User password", examples=["demo123"])
 
 
 class LoginResponse(BaseModel):
@@ -23,8 +25,8 @@ class LoginResponse(BaseModel):
     email: str
 
 
-class UserResponse(BaseModel):
-    """User response schema for authenticated user info."""
+class AuthMeResponse(BaseModel):
+    """Authenticated user info (/auth/me)."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -32,12 +34,4 @@ class UserResponse(BaseModel):
     email: str
     role: str
     status: str
-    created_at: datetime
     last_login_at: datetime | None = None
-
-
-class TokenPayload(BaseModel):
-    """JWT token payload schema."""
-
-    sub: str  # user_id as string
-    exp: datetime

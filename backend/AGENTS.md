@@ -1,116 +1,95 @@
-# agents.md (backend/)
+# AGENTS.md (backend/)
 
 Regras e padrões específicos do **backend FastAPI (Python)**.
 
 ## Objetivo do backend
-- Fornecer endpoints:
-  - `GET /health` (verifica conexão com PostgreSQL)
-  - `POST /auth/login` (valida no PostgreSQL, seta cookie `access_token`)
-  - `POST /auth/logout` (limpa cookie)
-  - `GET /home` (protegido, retorna JSON do PostgreSQL com dados tipados)
-- CORS com credenciais
-- PostgreSQL com SQLAlchemy e Alembic
-- Pydantic v2 para validação
-- Testes mínimos do fluxo de auth
+- Expor uma API segura e bem documentada (Swagger em `/docs`)
+- Autenticação via **JWT access-only** em cookie `access_token` (httpOnly)
+- Revogação real de sessão via allowlist `auth.jwt_sessions` (`jti`)
+- PostgreSQL gerenciado com **Alembic** desde o início
 
-## Stack e decisões
-- FastAPI + Uvicorn
-- PostgreSQL (ORM: SQLAlchemy 2.0+)
-- Alembic (migrations)
-- Pydantic v2 (schemas de requisição/resposta)
-- JWT HS256 em cookie httpOnly
-- Password hashing com bcrypt
+## Contrato de rotas
 
-## Estrutura sugerida
+### Infra
+- `GET /health` (verifica conectividade com Postgres)
+
+### Auth (v1)
+- `POST /api/v1/auth/login` → **204** + `Set-Cookie: access_token=...`
+- `POST /api/v1/auth/logout` → **204** (revoga sessão + remove cookie)
+- `GET  /api/v1/auth/me`
+
+### Portal do aluno (/me)
+- `GET  /api/v1/me/profile`
+- `GET  /api/v1/me/today-class` (regra “1 aula por dia”, robusto com `warnings[]`)
+- `GET  /api/v1/me/academic/summary`
+- `GET  /api/v1/me/financial/summary`
+- `GET  /api/v1/me/financial/invoices` (paginado)
+- `POST /api/v1/me/financial/invoices/{invoice_id}/pay-mock`
+- `GET  /api/v1/me/notifications` (paginado + `unread_only`)
+- `GET  /api/v1/me/notifications/unread-count`
+- `POST /api/v1/me/notifications/{user_notification_id}/read|unread|archive`
+- `GET  /api/v1/me/documents`
+- `POST /api/v1/me/documents/{doc_type}/request`
+- `GET  /api/v1/me/documents/{doc_type}/download`
+
+### Admin (exige `ADMIN`)
+- CRUD acadêmico: terms, courses, subjects, sections, meetings, sessions, students, enrollments, attendance, assessments, assessment-grades, final-grades
+- Financeiro: invoices, payments + `POST /api/v1/admin/invoices/{invoice_id}/mark-paid`
+- Comunicação: notifications + deliver + user-notifications + preferences
+- Documentos: student-documents
+
+### Compatibilidade
+- Não manter rotas legacy (usar apenas `/api/v1/*`).
+
+## Estrutura do código (atual)
 ```txt
 backend/
-├── AGENTS.md
 ├── app
 │   ├── core
-│   │   ├── config.py      # Settings com Pydantic (JWT, CORS, DATABASE_URL)
-│   │   ├── database.py    # SQLAlchemy engine, SessionLocal, get_db
-│   │   └── security.py    # JWT + password hashing
-│   ├── models
-│   │   ├── __init__.py
-│   │   └── user.py        # SQLAlchemy models (User, Student, etc.)
+│   │   ├── config.py      # Settings (pydantic-settings)
+│   │   ├── database.py    # engine + SessionLocal + get_db
+│   │   ├── deps.py        # deps: current_user, admin, pagination
+│   │   ├── errors.py      # envelope de erro + handlers
+│   │   └── security.py    # bcrypt + JWT (sub/jti/exp)
+│   ├── db
+│   │   └── utils.py       # helpers de CRUD/paginação
+│   ├── models             # SQLAlchemy models (schemas do Postgres)
 │   ├── routers
-│   │   ├── health.py      # GET /health (com check de DB)
-│   │   ├── auth.py        # POST /login, /logout
-│   │   └── home.py        # GET /home (protegido)
-│   ├── schemas
-│   │   ├── auth.py        # Pydantic schemas para auth
-│   │   └── home.py        # Pydantic schemas para home
+│   │   ├── v1/            # contrato /api/v1
+│   │   ├── health.py
+│   │   ├── home.py
+│   │   └── auth.py        # legacy
+│   ├── schemas            # Pydantic request/response
 │   └── main.py
-### Database (SQLAlchemy + Alembic)
-- SQLAlchemy 2.0+ (preferência por async, mas sync é ok para MVP)
-- Models em `app/models/` espelhando o schema do PostgreSQL (`init.sql`)
-- Session por requisição via dependency injection (`get_db`)
-- Alembic para todas as mudanças de schema
-- Migrations devem ser idempotentes
-
-### Pydantic
-- Pydantic v2 para schemas de requisição/resposta
-- Separar SQLAlchemy models de Pydantic schemas
-- Usar `model_config = ConfigDict(from_attributes=True)` para conversão ORM -> Pydantic
-- Schemas em `app/schemas/`
-
-### API design
-- Rotas pequenas e "finas"; lógica em `core/` ou services quando necessário
-- Responses consistentes e documentadas (status codes corretos)
-- Erros com `HTTPException` e mensagens claras
-- Sempre usar dependency injection para database session
-├── tests
-│   ├── test_auth_flow.py
-│   └── test_database.py
-├── requirements.txt
-├── requirements-dev.txt
-├── pyproject.toml
-└── Dockerfile
+├── alembic
+│   └── versions
+└── tests
 ```
 
-## Padrões de código
-### API design
-- Rotas pequenas e “finas”; lógica em `core/` quando necessário.
-- Responses consistentes e documeusar `pydantic-settings`)
-- Variáveis obrigatórias: `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGINS`
-- `CORS_ORIGINS` deve ser lista (split por vírgula)
-- Validar DATABASE_URL no startup
-Conexão com PostgreSQL funciona
-- Teste 2: `GET /home` sem cookie => `401`
-- Teste 3: `POST /auth/login` com credenciais válidas => cookie setado
-- Teste 4: `GET /home` com cookie válido => `200` com dados do PostgreSQL
-- Usar fixtures para criar usuário de teste no DB
-  - `httponly=True`
-  - `samesite="lax"`
-  - `secure=False` em dev
-  - `path="/"`
-- Não aceitar `*` em CORS quando `allow_credentials=True`.
-- Não logar tokens nem segredos.
-- `JWT_SECRET` vem de env; nunca hardcode.
+## Padrões de API
+- Prefixo: `/api/v1/*`
+- Paginação padrão: `limit` (1..100) e `offset` (>=0)
+- Erros sempre em envelope:
+```json
+{ "error": { "code": "SOME_CODE", "message": "Mensagem", "details": {} } }
+```
+- **Weekday convention** (academics.section_meetings): `0=Domingo ... 6=Sábado`
 
-### Config
-- Centralizar env em `Settings` (pydantic-settings ou solução simples).
-- `CORS_ORIGINS` deve ser lista (split por vírgula).
+## Segurança (mínimo aceitável)
+- Cookie `access_token`: `httponly=True`, `samesite=lax` (dev), `secure=False` (dev)
+- CORS: `allow_credentials=True` e origins restritos (nunca `*`)
+- Nunca colocar tokens em `localStorage`
+- Não logar segredos/cookies/tokens
 
-## Testes mínimos (obrigatórios)
-- Teste 1: `GET /home` sem cookie => `401`- Criar session do SQLAlchemy sem context manager ou dependency
-- Fazer queries SQL raw quando o ORM pode resolver
-- Esquecer de fechar sessions (usar `try/finally` ou dependency)
-- Fazer migrations manuais (sempre usar Alembic)- Teste 2: `POST /auth/login` => cookie setado
-- Teste 3: `GET /home` com cookie => `200`
+## Testes (mínimo)
+Obrigatório manter verde:
+- Auth v1: login/me/logout
+- RBAC: student bloqueado em `/api/v1/admin/*`
+- Flows `/me`: notifications, pay-mock, documents
+- Admin smoke: criação de semestre mínimo + validação de conflito de agenda
 
 ## Qualidade
 Deve passar:
-- `ruff format --check .` (ou `ruff format .` local)
 - `ruff check .`
+- `ruff format --check .`
 - `pytest`
-
-## Observabilidade
-- Logar início da app e erros inesperados (sem vazar segredos).
-- Para endpoints críticos, logar apenas metadados (status, rota).
-
-## Anti-padrões (evitar)
-- Colocar toda a lógica em `main.py`
-- Duplicar schemas em múltiplos lugares
-- Validar JWT “na mão” em cada rota (usar dependency)
-- Misturar regras de CORS em vários arquivos

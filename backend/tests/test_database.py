@@ -2,9 +2,6 @@
 UniFECAF Portal do Aluno - Database Connection Tests
 """
 
-import pytest
-from sqlalchemy import text
-
 
 def test_database_connection(client):
     """Test that database connection works via health endpoint."""

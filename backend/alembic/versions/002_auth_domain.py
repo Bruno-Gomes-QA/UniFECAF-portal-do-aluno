@@ -6,34 +6,34 @@ Create Date: 2026-01-30
 
 Creates auth domain tables: users and JWT sessions.
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 from alembic import op
-import sqlalchemy as sa
 
 # revision identifiers
 revision: str = "002_auth_domain"
-down_revision: Union[str, None] = "001_common_extensions"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "001_common_extensions"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
     """Create auth domain tables."""
-    
+
     # Create enums
     op.execute("""
         DO $$ BEGIN
           CREATE TYPE auth.user_role AS ENUM ('STUDENT', 'STAFF', 'ADMIN');
         EXCEPTION WHEN duplicate_object THEN NULL; END $$
     """)
-    
+
     op.execute("""
         DO $$ BEGIN
           CREATE TYPE auth.user_status AS ENUM ('ACTIVE', 'INVITED', 'SUSPENDED');
         EXCEPTION WHEN duplicate_object THEN NULL; END $$
     """)
-    
+
     # Create users table
     op.execute("""
         CREATE TABLE auth.users (
@@ -47,13 +47,13 @@ def upgrade() -> None:
           last_login_at   timestamptz
         )
     """)
-    
+
     op.execute("""
         CREATE TRIGGER trg_users_updated_at
         BEFORE UPDATE ON auth.users
         FOR EACH ROW EXECUTE FUNCTION common.set_updated_at()
     """)
-    
+
     # Create JWT sessions table
     op.execute("""
         CREATE TABLE auth.jwt_sessions (
@@ -66,9 +66,11 @@ def upgrade() -> None:
           user_agent      text
         )
     """)
-    
+
     op.execute("CREATE INDEX idx_jwt_sessions_user ON auth.jwt_sessions(user_id)")
-    op.execute("CREATE INDEX idx_jwt_sessions_active ON auth.jwt_sessions(user_id) WHERE revoked_at IS NULL")
+    op.execute(
+        "CREATE INDEX idx_jwt_sessions_active ON auth.jwt_sessions(user_id) WHERE revoked_at IS NULL"
+    )
 
 
 def downgrade() -> None:

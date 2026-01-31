@@ -2,35 +2,36 @@
 UniFECAF Portal do Aluno - SQLAlchemy Models
 """
 
-from app.models.user import User
 from app.models.academics import (
-    Campus,
+    Assessment,
+    AssessmentGrade,
+    AttendanceRecord,
+    ClassSession,
     Course,
-    Term,
-    Subject,
-    Student,
+    FinalGrade,
     Section,
     SectionEnrollment,
     SectionMeeting,
-    ClassSession,
-    AttendanceRecord,
-    Assessment,
-    AssessmentGrade,
-    FinalGrade,
+    Student,
+    Subject,
+    Term,
 )
+from app.models.audit import AuditLog
+from app.models.auth import JwtSession
+from app.models.documents import StudentDocument
 from app.models.finance import Invoice, Payment
 from app.models.notifications import (
     Notification,
-    UserNotification,
     NotificationPreference,
+    UserNotification,
 )
-from app.models.documents import StudentDocument
+from app.models.user import User
 
 __all__ = [
     # Auth
     "User",
+    "JwtSession",
     # Academics
-    "Campus",
     "Course",
     "Term",
     "Subject",
@@ -52,4 +53,6 @@ __all__ = [
     "NotificationPreference",
     # Documents
     "StudentDocument",
+    # Audit
+    "AuditLog",
 ]

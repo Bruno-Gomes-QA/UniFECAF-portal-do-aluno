@@ -19,6 +19,7 @@ select = [
 ]
 ignore = [
     "E501",  # line too long (handled by formatter)
+    "B008",  # FastAPI depends pattern: Depends(...) in function signature defaults
 ]
 
 [tool.ruff.format]

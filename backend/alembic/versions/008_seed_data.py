@@ -22,7 +22,7 @@ ADMIN_EMAIL = "admin@unifecaf.edu.br"
 DEMO_EMAIL = "demo@unifecaf.edu.br"
 
 ADMIN_HASH = "$2b$12$WxiM0oeNRfEzmHMl6TCj6uUN5PL4BT.yS7/JcSw0cdWPiyrQSGSJe"  # admin123
-DEMO_HASH = "$2b$12$ggUaCepcvEfOzWkfW.v5fum9x0mrM2W7ZEOVNk0UVrfv/5kpZoTNO"   # demo123
+DEMO_HASH = "$2b$12$ggUaCepcvEfOzWkfW.v5fum9x0mrM2W7ZEOVNk0UVrfv/5kpZoTNO"  # demo123
 
 
 def upgrade() -> None:
@@ -172,7 +172,7 @@ def upgrade() -> None:
     """)
 
     # 9) ENROLLMENTS do aluno nas 2 disciplinas do semestre
-    op.execute(f"""
+    op.execute("""
     WITH st AS (
       SELECT user_id AS student_id FROM academics.students WHERE ra='20240988' LIMIT 1
     ),
@@ -342,7 +342,7 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     # Remove dados de demo (reverse-friendly via chaves estáveis)
-    op.execute(f"""
+    op.execute("""
     DELETE FROM documents.student_documents
     WHERE student_id IN (SELECT user_id FROM academics.students WHERE ra='20240988');
     """)

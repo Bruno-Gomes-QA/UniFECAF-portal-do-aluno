@@ -6,40 +6,40 @@ Create Date: 2026-01-30
 
 Creates communications domain tables: notifications, user notifications and preferences.
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 from alembic import op
-import sqlalchemy as sa
 
 # revision identifiers
 revision: str = "005_comm_domain"
-down_revision: Union[str, None] = "004_finance_domain"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "004_finance_domain"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
     """Create communications domain tables."""
-    
+
     # Create enums
     op.execute("""
         DO $$ BEGIN
           CREATE TYPE comm.notification_type AS ENUM ('ACADEMIC', 'FINANCIAL', 'ADMIN');
         EXCEPTION WHEN duplicate_object THEN NULL; END $$
     """)
-    
+
     op.execute("""
         DO $$ BEGIN
           CREATE TYPE comm.notification_channel AS ENUM ('IN_APP', 'EMAIL', 'SMS');
         EXCEPTION WHEN duplicate_object THEN NULL; END $$
     """)
-    
+
     op.execute("""
         DO $$ BEGIN
           CREATE TYPE comm.notification_priority AS ENUM ('LOW', 'NORMAL', 'HIGH');
         EXCEPTION WHEN duplicate_object THEN NULL; END $$
     """)
-    
+
     # Notifications
     op.execute("""
         CREATE TABLE comm.notifications (
@@ -52,7 +52,7 @@ def upgrade() -> None:
           created_at  timestamptz NOT NULL DEFAULT now()
         )
     """)
-    
+
     # User Notifications
     op.execute("""
         CREATE TABLE comm.user_notifications (
@@ -66,10 +66,14 @@ def upgrade() -> None:
           UNIQUE (user_id, notification_id)
         )
     """)
-    
-    op.execute("CREATE INDEX idx_user_notifications_user ON comm.user_notifications(user_id, delivered_at DESC)")
-    op.execute("CREATE INDEX idx_user_notifications_unread ON comm.user_notifications(user_id) WHERE read_at IS NULL")
-    
+
+    op.execute(
+        "CREATE INDEX idx_user_notifications_user ON comm.user_notifications(user_id, delivered_at DESC)"
+    )
+    op.execute(
+        "CREATE INDEX idx_user_notifications_unread ON comm.user_notifications(user_id) WHERE read_at IS NULL"
+    )
+
     # Notification Preferences
     op.execute("""
         CREATE TABLE comm.notification_preferences (
@@ -81,7 +85,7 @@ def upgrade() -> None:
           updated_at      timestamptz NOT NULL DEFAULT now()
         )
     """)
-    
+
     op.execute("""
         CREATE TRIGGER trg_notification_preferences_updated_at
         BEFORE UPDATE ON comm.notification_preferences

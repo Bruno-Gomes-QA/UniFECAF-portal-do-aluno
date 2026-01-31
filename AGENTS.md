@@ -7,7 +7,7 @@ Este arquivo define **regras e padrões** para agentes/assistentes e para qualqu
 - Execução local com 1 comando: `docker compose up --build`
 - CI (GitHub Actions) com lint/test/build
 - Autenticação com **JWT via cookie httpOnly**
-- Home consumindo `/home` protegido
+- API versionada em `/api/v1/*`
 - PostgreSQL gerenciado com Alembic desde o início
 
 ## Estrutura (contrato)
@@ -69,12 +69,12 @@ Este arquivo define **regras e padrões** para agentes/assistentes e para qualqu
 - Frontend: estados de erro com fallback e “tentar novamente”
 
 ## Testes (mínimo)
-- Backend: 1 teste de fluxo auth (`login -> /home` e `sem cookie -> 401`)
+- Backend: fluxo auth v1 + RBAC + smoke `/me` e `/admin`
 - Frontend: pelo menos validação de lint/typecheck/build; testes UI opcionais por enquanto
 
 ## Definition of Done (DoD)
 - `docker compose up --build` funciona (backend + frontend + PostgreSQL)
 - Migrations do Alembic aplicadas automaticamente
 - CI verde (lint/test/build)
-- Fluxo login + `/home` protegido funcionando
+- Fluxo login + `/api/v1/me/*` funcionando
 - Docs atualizadas (quando houver mudança de uso/ambiente)

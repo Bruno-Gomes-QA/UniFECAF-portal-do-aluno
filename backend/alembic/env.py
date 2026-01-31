@@ -2,11 +2,14 @@
 UniFECAF Portal do Aluno - Alembic Environment Configuration
 """
 
-import os
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import engine_from_config, pool
+
+from alembic import context
+
+# Prefer app Settings, but keep env override for CI/containers.
+from app.core.config import get_settings
 
 # Import all models so Alembic can detect them
 from app.core.database import Base
@@ -22,11 +25,8 @@ if config.config_file_name is not None:
 # Set target metadata for autogenerate support
 target_metadata = Base.metadata
 
-# Get database URL from environment
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://unifecaf:unifecaf@localhost:5432/unifecaf_dev"
-)
+settings = get_settings()
+DATABASE_URL = settings.database_url
 
 
 def run_migrations_offline() -> None:

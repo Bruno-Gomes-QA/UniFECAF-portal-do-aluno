@@ -4,65 +4,46 @@ Revision ID: 003_academics_domain
 Revises: 002_auth_domain
 Create Date: 2026-01-30
 
-Creates academics domain tables: campuses, courses, terms, subjects, students, sections, enrollments, meetings, class sessions, attendance, assessments and final grades.
+Creates academics domain tables: courses, terms, subjects, students, sections, enrollments, meetings, class sessions, attendance, assessments and final grades.
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 from alembic import op
-import sqlalchemy as sa
 
 # revision identifiers
 revision: str = "003_academics_domain"
-down_revision: Union[str, None] = "002_auth_domain"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "002_auth_domain"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
     """Create academics domain tables."""
-    
+
     # Create enums
     op.execute("""
         DO $$ BEGIN
           CREATE TYPE academics.enrollment_status AS ENUM ('ENROLLED', 'LOCKED', 'DROPPED', 'COMPLETED');
         EXCEPTION WHEN duplicate_object THEN NULL; END $$
     """)
-    
+
     op.execute("""
         DO $$ BEGIN
           CREATE TYPE academics.attendance_status AS ENUM ('PRESENT', 'ABSENT', 'EXCUSED');
         EXCEPTION WHEN duplicate_object THEN NULL; END $$
     """)
-    
+
     op.execute("""
         DO $$ BEGIN
           CREATE TYPE academics.final_status AS ENUM ('IN_PROGRESS', 'APPROVED', 'FAILED');
         EXCEPTION WHEN duplicate_object THEN NULL; END $$
     """)
-    
-    # Campuses
-    op.execute("""
-        CREATE TABLE academics.campuses (
-          id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-          name        text NOT NULL,
-          city        text,
-          state       text,
-          created_at  timestamptz NOT NULL DEFAULT now(),
-          updated_at  timestamptz NOT NULL DEFAULT now()
-        )
-    """)
-    
-    op.execute("""
-        CREATE TRIGGER trg_campuses_updated_at
-        BEFORE UPDATE ON academics.campuses
-        FOR EACH ROW EXECUTE FUNCTION common.set_updated_at()
-    """)
-    
+
     # Courses
     op.execute("""
         CREATE TABLE academics.courses (
           id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-          campus_id       uuid REFERENCES academics.campuses(id) ON DELETE SET NULL,
           name            text NOT NULL,
           degree_type     text,
           duration_terms  int CHECK (duration_terms IS NULL OR duration_terms > 0),
@@ -70,13 +51,13 @@ def upgrade() -> None:
           updated_at      timestamptz NOT NULL DEFAULT now()
         )
     """)
-    
+
     op.execute("""
         CREATE TRIGGER trg_courses_updated_at
         BEFORE UPDATE ON academics.courses
         FOR EACH ROW EXECUTE FUNCTION common.set_updated_at()
     """)
-    
+
     # Terms
     op.execute("""
         CREATE TABLE academics.terms (
@@ -90,13 +71,13 @@ def upgrade() -> None:
           CHECK (end_date > start_date)
         )
     """)
-    
+
     op.execute("""
         CREATE TRIGGER trg_terms_updated_at
         BEFORE UPDATE ON academics.terms
         FOR EACH ROW EXECUTE FUNCTION common.set_updated_at()
     """)
-    
+
     # Subjects
     op.execute("""
         CREATE TABLE academics.subjects (
@@ -111,13 +92,13 @@ def upgrade() -> None:
           UNIQUE (course_id, code)
         )
     """)
-    
+
     op.execute("""
         CREATE TRIGGER trg_subjects_updated_at
         BEFORE UPDATE ON academics.subjects
         FOR EACH ROW EXECUTE FUNCTION common.set_updated_at()
     """)
-    
+
     # Students
     op.execute("""
         CREATE TABLE academics.students (
@@ -131,13 +112,13 @@ def upgrade() -> None:
           updated_at      timestamptz NOT NULL DEFAULT now()
         )
     """)
-    
+
     op.execute("""
         CREATE TRIGGER trg_students_updated_at
         BEFORE UPDATE ON academics.students
         FOR EACH ROW EXECUTE FUNCTION common.set_updated_at()
     """)
-    
+
     # Sections
     op.execute("""
         CREATE TABLE academics.sections (
@@ -152,13 +133,13 @@ def upgrade() -> None:
           UNIQUE (term_id, subject_id, code)
         )
     """)
-    
+
     op.execute("""
         CREATE TRIGGER trg_sections_updated_at
         BEFORE UPDATE ON academics.sections
         FOR EACH ROW EXECUTE FUNCTION common.set_updated_at()
     """)
-    
+
     # Section Enrollments
     op.execute("""
         CREATE TABLE academics.section_enrollments (
@@ -171,13 +152,13 @@ def upgrade() -> None:
           UNIQUE (student_id, section_id)
         )
     """)
-    
+
     op.execute("""
         CREATE TRIGGER trg_section_enrollments_updated_at
         BEFORE UPDATE ON academics.section_enrollments
         FOR EACH ROW EXECUTE FUNCTION common.set_updated_at()
     """)
-    
+
     # Section Meetings
     op.execute("""
         CREATE TABLE academics.section_meetings (
@@ -192,15 +173,17 @@ def upgrade() -> None:
           CHECK (end_time > start_time)
         )
     """)
-    
+
     op.execute("""
         CREATE TRIGGER trg_section_meetings_updated_at
         BEFORE UPDATE ON academics.section_meetings
         FOR EACH ROW EXECUTE FUNCTION common.set_updated_at()
     """)
-    
-    op.execute("CREATE INDEX idx_section_meetings_section_weekday ON academics.section_meetings(section_id, weekday)")
-    
+
+    op.execute(
+        "CREATE INDEX idx_section_meetings_section_weekday ON academics.section_meetings(section_id, weekday)"
+    )
+
     # Class Sessions
     op.execute("""
         CREATE TABLE academics.class_sessions (
@@ -217,15 +200,17 @@ def upgrade() -> None:
           UNIQUE (section_id, session_date, start_time)
         )
     """)
-    
+
     op.execute("""
         CREATE TRIGGER trg_class_sessions_updated_at
         BEFORE UPDATE ON academics.class_sessions
         FOR EACH ROW EXECUTE FUNCTION common.set_updated_at()
     """)
-    
-    op.execute("CREATE INDEX idx_class_sessions_date_time ON academics.class_sessions(session_date, start_time)")
-    
+
+    op.execute(
+        "CREATE INDEX idx_class_sessions_date_time ON academics.class_sessions(session_date, start_time)"
+    )
+
     # Attendance Records
     op.execute("""
         CREATE TABLE academics.attendance_records (
@@ -239,15 +224,15 @@ def upgrade() -> None:
           UNIQUE (session_id, student_id)
         )
     """)
-    
+
     op.execute("""
         CREATE TRIGGER trg_attendance_records_updated_at
         BEFORE UPDATE ON academics.attendance_records
         FOR EACH ROW EXECUTE FUNCTION common.set_updated_at()
     """)
-    
+
     op.execute("CREATE INDEX idx_attendance_student ON academics.attendance_records(student_id)")
-    
+
     # Assessments
     op.execute("""
         CREATE TABLE academics.assessments (
@@ -264,13 +249,13 @@ def upgrade() -> None:
           CHECK (max_score > 0)
         )
     """)
-    
+
     op.execute("""
         CREATE TRIGGER trg_assessments_updated_at
         BEFORE UPDATE ON academics.assessments
         FOR EACH ROW EXECUTE FUNCTION common.set_updated_at()
     """)
-    
+
     # Assessment Grades
     op.execute("""
         CREATE TABLE academics.assessment_grades (
@@ -283,13 +268,13 @@ def upgrade() -> None:
           UNIQUE (assessment_id, student_id)
         )
     """)
-    
+
     op.execute("""
         CREATE TRIGGER trg_assessment_grades_updated_at
         BEFORE UPDATE ON academics.assessment_grades
         FOR EACH ROW EXECUTE FUNCTION common.set_updated_at()
     """)
-    
+
     # Final Grades
     op.execute("""
         CREATE TABLE academics.final_grades (
@@ -306,15 +291,15 @@ def upgrade() -> None:
           UNIQUE (section_id, student_id)
         )
     """)
-    
+
     op.execute("""
         CREATE TRIGGER trg_final_grades_updated_at
         BEFORE UPDATE ON academics.final_grades
         FOR EACH ROW EXECUTE FUNCTION common.set_updated_at()
     """)
-    
+
     op.execute("CREATE INDEX idx_final_grades_student ON academics.final_grades(student_id)")
-    
+
     # Create convenience view
     op.execute("""
         CREATE OR REPLACE VIEW academics.v_student_next_class_today AS
@@ -353,7 +338,6 @@ def downgrade() -> None:
     op.execute("DROP TABLE IF EXISTS academics.subjects CASCADE")
     op.execute("DROP TABLE IF EXISTS academics.terms CASCADE")
     op.execute("DROP TABLE IF EXISTS academics.courses CASCADE")
-    op.execute("DROP TABLE IF EXISTS academics.campuses CASCADE")
     op.execute("DROP TYPE IF EXISTS academics.final_status")
     op.execute("DROP TYPE IF EXISTS academics.attendance_status")
     op.execute("DROP TYPE IF EXISTS academics.enrollment_status")

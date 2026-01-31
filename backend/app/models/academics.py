@@ -53,27 +53,6 @@ class FinalStatus(str, enum.Enum):
     FAILED = "FAILED"
 
 
-class Campus(Base):
-    """Campus model."""
-
-    __tablename__ = "campuses"
-    __table_args__ = {"schema": "academics"}
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name: Mapped[str] = mapped_column(String, nullable=False)
-    city: Mapped[str | None] = mapped_column(String, nullable=True)
-    state: Mapped[str | None] = mapped_column(String, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
-    )
-
-    # Relationships
-    courses: Mapped[list["Course"]] = relationship("Course", back_populates="campus")
-
-
 class Course(Base):
     """Course model."""
 
@@ -81,9 +60,6 @@ class Course(Base):
     __table_args__ = {"schema": "academics"}
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    campus_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("academics.campuses.id", ondelete="SET NULL"), nullable=True
-    )
     name: Mapped[str] = mapped_column(String, nullable=False)
     degree_type: Mapped[str | None] = mapped_column(String, nullable=True)
     duration_terms: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -95,7 +71,6 @@ class Course(Base):
     )
 
     # Relationships
-    campus: Mapped[Campus | None] = relationship("Campus", back_populates="courses")
     subjects: Mapped[list["Subject"]] = relationship("Subject", back_populates="course")
     students: Mapped[list["Student"]] = relationship("Student", back_populates="course")
 
@@ -370,7 +345,9 @@ class AttendanceRecord(Base):
     )
 
     # Relationships
-    session: Mapped[ClassSession] = relationship("ClassSession", back_populates="attendance_records")
+    session: Mapped[ClassSession] = relationship(
+        "ClassSession", back_populates="attendance_records"
+    )
 
 
 class Assessment(Base):

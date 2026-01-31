@@ -6,34 +6,34 @@ Create Date: 2026-01-30
 
 Creates documents domain tables: student documents.
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 from alembic import op
-import sqlalchemy as sa
 
 # revision identifiers
 revision: str = "006_documents_domain"
-down_revision: Union[str, None] = "005_comm_domain"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "005_comm_domain"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
     """Create documents domain tables."""
-    
+
     # Create enums
     op.execute("""
         DO $$ BEGIN
           CREATE TYPE documents.document_type AS ENUM ('DECLARATION', 'STUDENT_CARD', 'TRANSCRIPT');
         EXCEPTION WHEN duplicate_object THEN NULL; END $$
     """)
-    
+
     op.execute("""
         DO $$ BEGIN
           CREATE TYPE documents.document_status AS ENUM ('AVAILABLE', 'GENERATING', 'ERROR');
         EXCEPTION WHEN duplicate_object THEN NULL; END $$
     """)
-    
+
     # Student Documents
     op.execute("""
         CREATE TABLE documents.student_documents (
@@ -49,7 +49,7 @@ def upgrade() -> None:
           UNIQUE (student_id, doc_type)
         )
     """)
-    
+
     op.execute("""
         CREATE TRIGGER trg_student_documents_updated_at
         BEFORE UPDATE ON documents.student_documents

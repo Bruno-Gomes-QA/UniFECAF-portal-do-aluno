@@ -11,9 +11,10 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", "../.env"),
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="ignore",
     )
 
     # Database
@@ -23,6 +24,9 @@ class Settings(BaseSettings):
     jwt_secret: str = "changeme-super-secret-key-min-32-chars"
     jwt_algorithm: str = "HS256"
     jwt_expires_minutes: int = 60
+    cookie_name: str = "access_token"
+    cookie_secure: bool = False
+    cookie_samesite: str = "lax"  # "lax" | "strict" | "none"
 
     # CORS
     cors_origins: str = "http://localhost:3000"

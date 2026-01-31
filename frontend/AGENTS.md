@@ -1,98 +1,95 @@
-# agents.md (frontend/)
+# AGENTS.md — UniFECAF Portal do Aluno (Frontend Next.js)
 
-Regras e padrões específicos do **frontend Next.js (TypeScript)**.
+Estas diretrizes orientam qualquer agente LLM (e contribuidores) no frontend **Next.js + shadcn/ui** em `apps/web/`.
 
-## Objetivo do frontend
-- Login simples
-- Home consumindo `/home` do backend (dados do PostgreSQL)
-- UX com estados: loading/erro/empty
-- Componentes claros e reutilizáveis
-- Usar Bun para gerenciamento e runtime
+---
 
-## Stack e decisões
-- Next.js + TypeScript
-- Bun (package manager e runtime)
-- Fetch com `credentials: "include"` (cookie httpOnly)
-- Variável de base URL: `NEXT_PUBLIC_API_BASE` (ex.: `http://localhost:8000`)
+## 1) Visão Geral
+- **Stack**: Next.js (App Router), TypeScript estrito, Tailwind, shadcn/ui (Radix).
+- **SSR**: obrigatório. Use Server Components e Server Layouts para guards e data fetching.
+- **Rotas**:
+  - `/login` (auth)
+  - `/` (Portal do Aluno - STUDENT)
+  - `/admin` (Painel Admin - ADMIN)
+- **Comunicação com backend**: via **BFF Proxy** (`app/api/proxy/[...path]/route.ts`)
+- **UI**: priorize componentes shadcn e padrões de dashboard (DataTable + Sheet + Dialog).
 
-## Estrutura sugerida
-```txt
-frontend/
-├── AGENTS.md
-├── src
-│   ├── app
-│   │   ├── (public)
-│   │   │   └── login
-│   │   │       └── page.tsx
-│   │   ├── (private)
-│   │   │   └── page.tsx      # home
-│   │   └── layout.tsx
-│   ├── components
-│   │   ├── ui/              # componentes base (Button, Card, etc.)
-│   │   └── features/        # componentes específicos (GradesSummary, etc.)
-│   ├── lib
-│   │   ├── api.ts           # fetch wrapper
-│   │   └── types.ts         # tipos do backend
-│   └── styles
-├── Bun
-- Usar `bun install` para instalar dependências
-- Usar `bun run <script>` para executar scripts
-- `bun.lockb` deve ser commitado (equivalente ao package-lock.json)
-- Em desenvolvimento local: `bun run dev`
-- Para build: `bun run build`
+---
 
-### TypeScript
-- `noImplicitAny` ligado
-- Tipar respostas do backend em `src/lib/types.ts`
-- Evitar `any`. Se inevitável, justificar em comentário curto
-- Usar interfaces para dados vindos da API
-├── tsconfig.json
-└── Dockerfile
+## 2) Estrutura de Pastas (contrato)
+```
+apps/web/
+├─ app/
+│  ├─ (auth)/login
+│  ├─ (student)/...
+│  ├─ admin/...
+│  └─ api/proxy/[...path]/route.ts
+├─ components/
+│  ├─ ui/
+│  ├─ shell/
+│  └─ shared/
+├─ features/
+│  ├─ admin/<domain>/
+│  └─ student/<domain>/
+├─ lib/
+│  ├─ api/
+│  ├─ auth/
+│  ├─ formatters/
+│  └─ validators/
+└─ types/
 ```
 
-> Se preferir manter simples no começo: `src/app/login/page.tsx` e `src/app/page.tsx` já resolve.
+---
 
-## Padrões de código e focados:
-  - `StudentHeader` - cabeçalho com info do aluno
-  - `GradesSummary` - resumo de notas
-  - `FinancialWidget` - status financeiro
-  - `TodayAgenda` - agenda do dia
-  - `NotificationsBell` - sino de notificações
-  - `QuickActions` - ações rápidas
-- Server Components quando possível, Client Components quando necessário (estados, eventos)
-- Separar lógica de fetch em `src/lib/api.ts`
-- Componentes pequenos:
-  - `StudentHeader`
-  - `GradesSummary`
-  - `FinancialWidget`
-  - `TodayAgenda`
-  - `NotificationsBell`
-  - `QuickActions`
+## 3) Convenções de Código
+1. **Nada de fetch solto em pages**: centralize em `lib/api` e `features/*/api.ts`.
+2. **Server vs Client**
+   - Server: fetch SSR, guards, pages de listas.
+   - Client: Sheets/Dialogs e forms.
+3. **Erro**: normalize envelope em `lib/api/errors.ts` e exiba toast.
+4. **Datas**: sempre pt-BR + `America/Sao_Paulo` via `lib/formatters/date.ts`.
+5. **Soft delete**: UI com filtro e ação desativar/reativar.
+6. **Padrão Admin**:
+   - List: DataTable SSR
+   - Create/Edit: Sheet 50vw
+   - Confirm: Dialog
+   - Detail: Sheet + Accordion + ScrollArea
+7. **Student**: no portal, só editar telefone.
+8. **A11y/UX**: skeleton/empty/error obrigatórios.
 
-### UI/UX
-- Mobile-first
-- Estados obrigatórios:
-  - loading (skeleton ou texto)
-  - erro (mensagem e retry)
-  - vazio (mensagem amigável)
-bun run lint`
-- `bun run typecheck`
-- `bunmpre** usar `credentials: "include"` em calls para a API.
-- Não ler JWT no JS (cookie é httpOnly).
-- Erro 401 na Home deve redirecionar pra `/login`.
+---
 
-## Qualidade (scripts)
-Deve passar:
-- `npm run lint`
-- `npm run typecheck`
-- `npm run build`
+## 4) Fluxo para criar tela integrada ao backend
 
-## Anti-padrões (evitar)
-- Guardar token em `localStorage`/`sessionStorage`
-- Fetch espalhado em 10 arquivos sem padrão
-- Componentes gigantes com +300 linhas
-- CSS inline demais; preferir utilitários (Tailwind) ou componentes consistentes
+### Passo 1 — Tipos
+- Criar `features/<domain>/types.ts` (ou em `types/` se compartilhar).
+- Evitar `any`.
 
-## Observabilidade
-- `console.error` aceitável em dev, mas preferir mensagens amigáveis ao usuário.
-- Se logar algo, nunca logar cookie/token.
+### Passo 2 — API layer
+Em `features/<domain>/api.ts` crie funções:
+- `listX(params)` / `getX(id)`
+- `createX(payload)` / `updateX(id,payload)`
+- `toggleActive(id, active)`
+
+### Passo 3 — Componentes de domínio
+- `XTable.tsx`
+- `XFormSheet.tsx`
+- `XDetailsSheet.tsx`
+
+### Passo 4 — Page SSR
+- `page.tsx` lê `searchParams` e chama `listX()`.
+- Renderiza Table + filtros.
+
+### Passo 5 — Revisão
+- lint/typecheck/build
+- estados de loading/empty/error
+
+---
+
+## 5) Checklist antes do merge
+- [ ] SSR guard server-side ok
+- [ ] DataTable paginada e filtros via URL
+- [ ] Sheet/Dialog consistentes
+- [ ] Tipos + zod schemas
+- [ ] Erros padronizados
+- [ ] pt-BR e timezone ok

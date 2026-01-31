@@ -2,6 +2,8 @@
 UniFECAF Portal do Aluno - Health Check Router
 """
 
+import logging
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy import text
@@ -10,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 
 router = APIRouter(tags=["Health"])
+logger = logging.getLogger(__name__)
 
 
 class HealthResponse(BaseModel):
@@ -31,8 +34,9 @@ def health_check(db: Session = Depends(get_db)) -> HealthResponse:
         # Test database connection
         db.execute(text("SELECT 1"))
         db_status = "connected"
-    except Exception as e:
-        db_status = f"error: {str(e)}"
+    except Exception:
+        logger.exception("Database healthcheck failed")
+        db_status = "error"
 
     return HealthResponse(
         status="ok" if db_status == "connected" else "degraded",
