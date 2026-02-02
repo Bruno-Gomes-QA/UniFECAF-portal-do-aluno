@@ -10,33 +10,6 @@ Sistema completo de **Portal Acadêmico** com área do aluno e backoffice admini
 
 ---
 
-## 🚀 Quick Start
-
-```bash
-# 1. Clone e entre na pasta
-git clone <repo-url>
-cd UniFECAF-portal-do-aluno
-
-# 2. Execute o script automatizado (cria .env, sobe tudo e popula dados)
-chmod +x start_and_seed.sh
-./start_and_seed.sh
-
-# Pronto! O script vai:
-# ✅ Criar .env automaticamente
-# ✅ Subir PostgreSQL
-# ✅ Subir Backend (FastAPI) com migrations
-# ✅ Popular banco com 300 alunos e dados realistas
-# ✅ Subir Frontend (Next.js)
-```
-
-| Serviço | URL |
-|---------|-----|
-| **Frontend** | http://localhost:3000 |
-| **Backend API** | http://localhost:8000 |
-| **API Docs (Swagger)** | http://localhost:8000/docs |
-
----
-
 ## 🌐 Sistema no Ar (Pronto para Testar!)
 
 **Não precisa configurar nada!** O sistema já está rodando na AWS para você testar imediatamente:
@@ -63,14 +36,16 @@ chmod +x start_and_seed.sh
 | `thiago.lopez@fecaf.com.br` | `thiago123@` | Admin |
 | `osvaldo.silva@fecaf.com.br` | `osvaldo123@` | Admin |
 
+---
+
 #### 🎓 Alunos (300 gerados automaticamente)
 
 **Padrão de email:** `<nome>.<sobrenome>.<ra>@a.fecaf.com.br`  
 **Padrão de senha:** `<nome>@<ra>`
 
 **Exemplo:**
-- Email: `joao.silva.108775@a.fecaf.com.br`
-- Senha: `joao@108775`
+- Email: `eloah.duarte.108783@a.fecaf.com.br`
+- Senha: `eloah@108783`
 
 ---
 
@@ -103,6 +78,31 @@ chmod +x start_and_seed.sh
 | **Dashboard** | Estatísticas por termo letivo |
 
 ---
+
+## 🚀 Quick Start
+
+```bash
+# 1. Clone e entre na pasta
+git clone <repo-url>
+cd UniFECAF-portal-do-aluno
+
+# 2. Execute o script automatizado (cria .env, sobe tudo e popula dados)
+chmod +x start_and_seed.sh
+./start_and_seed.sh
+
+# Pronto! O script vai:
+# ✅ Criar .env automaticamente
+# ✅ Subir PostgreSQL
+# ✅ Subir Backend (FastAPI) com migrations
+# ✅ Popular banco com 300 alunos e dados realistas
+# ✅ Subir Frontend (Next.js)
+```
+
+| Serviço | URL |
+|---------|-----|
+| **Frontend** | http://localhost:3000 |
+| **Backend API** | http://localhost:8000 |
+| **API Docs (Swagger)** | http://localhost:8000/docs |
 
 ## 🏗️ Arquitetura
 
