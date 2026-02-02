@@ -35,6 +35,21 @@ chmod +x start_and_seed.sh
 | **Backend API** | http://localhost:8000 |
 | **API Docs (Swagger)** | http://localhost:8000/docs |
 
+---
+
+## 🌐 Sistema no Ar (Pronto para Testar!)
+
+**Não precisa configurar nada!** O sistema já está rodando na AWS para você testar imediatamente:
+
+| Ambiente | URL | Descrição |
+|----------|-----|-----------|
+| **🌐 Frontend** | **[http://18.117.33.254:3000](http://18.117.33.254:3000)** | Portal completo (Admin + Aluno) |
+| **📚 Backend (Swagger)** | **[http://18.117.33.254:8000/docs](http://18.117.33.254:8000/docs)** | Documentação interativa da API |
+
+> **💡 Nota:** Este ambiente está no ar para facilitar testes e avaliação, nao tem foco em seguranca por isso o SG esta expondo as portas dessa maneira e o ip da maquina, depois do recrutamento vou tirar do ar e fechar a VPC novamente. O foco é demonstração rápida, sem necessidade de setup local. Todos os dados de teste já estão populados (300 alunos + admins).
+
+---
+
 ### Credenciais de Teste
 
 #### 👤 Administradores

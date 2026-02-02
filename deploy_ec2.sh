@@ -125,14 +125,15 @@ JWT_EXPIRES_MINUTES=60
 # Cookie config (prod)
 COOKIE_SECURE=false
 COOKIE_SAMESITE=lax
-# CORS Origins para EC2
-CORS_ORIGINS=${FRONTEND_URL},${BACKEND_URL}
+# CORS Origins para EC2 (incluir IP público + nomes dos serviços Docker)
+CORS_ORIGINS=${FRONTEND_URL},${BACKEND_URL},http://web:3000,http://api:8000
 
 # ==========================
 # Frontend Configuration
 # ==========================
 # URL do backend usada pelo Next.js (SSR + BFF proxy)
-BACKEND_BASE_URL=${BACKEND_URL}
+# IMPORTANTE: Usar nome do serviço Docker (api) para comunicação interna
+BACKEND_BASE_URL=http://api:8000
 EOF
 
 print_success "Arquivo .env criado com configurações EC2"
