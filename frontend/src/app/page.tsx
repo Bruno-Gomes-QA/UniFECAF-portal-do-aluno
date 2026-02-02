@@ -1,10 +1,23 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { GraduationCap, ShieldCheck, ArrowRight, LayoutDashboard, UserCircle } from "lucide-react";
+import { getCurrentUser } from "@/lib/auth/server";
 
 /**
  * Landing Page principal para escolha de acesso (Aluno ou Administrador)
  */
-export default function LandingPage() {
+export default async function LandingPage() {
+  const user = await getCurrentUser();
+
+  // Redireciona se já estiver logado
+  if (user) {
+    if (user.role === 'STUDENT') {
+      redirect('/inicio');
+    } else if (user.role === 'ADMIN') {
+      redirect('/administrativo');
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden text-primary">
       {/* Background Decorativo */}

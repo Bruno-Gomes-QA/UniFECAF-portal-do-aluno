@@ -44,7 +44,7 @@ const COPY: Record<LoginVariant, VariantCopy> = {
     note: 'Dica: mantenha seu email atualizado para receber avisos e comunicados importantes.',
     formTitle: 'Entrar',
     formDescription: 'Use seu email e senha cadastrados para acessar o portal.',
-    redirectTo: '/',
+    redirectTo: '/inicio',
     switchHref: '/login/administrativo',
     switchLabel: 'Sou administrador',
   },

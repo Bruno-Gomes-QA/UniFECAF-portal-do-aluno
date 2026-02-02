@@ -48,7 +48,7 @@ type MenuItem = {
 const MENU_ITEMS: MenuItem[] = [
   {
     title: 'Início',
-    href: '/',
+    href: '/inicio',
     exact: true,
     icon: Home,
     description: 'Visão geral e resumos',
