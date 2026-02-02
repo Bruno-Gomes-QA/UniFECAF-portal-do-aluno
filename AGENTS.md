@@ -1,80 +1,116 @@
-# agents.md (Root / Repo)
+# AGENTS.md — UniFECAF Portal do Aluno (Monorepo Root)
 
-Este arquivo define **regras e padrões** para agentes/assistentes e para qualquer pessoa contribuindo no repositório.
+Diretrizes para agentes LLM e contribuidores neste monorepo.
 
-## Objetivos do repo
-- Monorepo simples: `backend/` (FastAPI) + `frontend/` (Next.js)
-- Execução local com 1 comando: `docker compose up --build`
-- CI (GitHub Actions) com lint/test/build
-- Autenticação com **JWT via cookie httpOnly**
-- API versionada em `/api/v1/*`
-- PostgreSQL gerenciado com Alembic desde o início
+---
 
-## Estrutura (contrato)
-- `backend/`: Python/FastAPI + SQLAlchemy + Alembic + Pydantic
-- `frontend/`: Next.js/TS + Bun
-- `docs/`: documentação (guias, PRs, decisões)
-- `.github/workflows`: CI
-- Cada pasta (backend/frontend) tem seu próprio `AGENTS.md`
+## 1) Objetivos do Projeto
 
-> **Não** adicionar ferramentas de monorepo (turbo/nx/lerna) sem necessidade clara. Preferir simplicidade.
+Sistema completo de **Portal do Aluno** para universidade, incluindo:
 
-## Tecnologias obrigatórias
-### Backend
-- FastAPI + Uvicorn
-- Pydantic v2 (validação e schemas)
-- PostgreSQL (Docker)
-- SQLAlchemy (ORM)
-- Alembic (migrations)
-- Pytest + Ruff
+- **Portal do Aluno**: área logada com perfil, notas, frequência, financeiro, notificações e documentos
+- **Backoffice Admin**: gestão completa de usuários, acadêmico, financeiro, comunicação e auditoria
 
-### Frontend
-- Next.js + TypeScript
-- Bun (package manager e runtime)
-- ESLint + TypeScript compiler
+---
 
-## Padrões gerais
-### Qualidade
-- Nada de código “mágico” sem doc.
-- Preferir funções pequenas, nomes óbvios, e camadas bem separadas.
-- Nenhum warning novo (lint/typecheck/test).
+## 2) Stack Técnica
+
+| Camada | Tecnologia |
+|--------|------------|
+| **Backend** | FastAPI + Python 3.12 + SQLAlchemy 2.0 + Alembic |
+| **Frontend** | Next.js 14 + TypeScript + Tailwind CSS + shadcn/ui |
+| **Banco** | PostgreSQL 16 |
+| **Package Manager** | Bun (frontend) |
+| **Containers** | Docker + Docker Compose |
+| **CI** | GitHub Actions |
+
+---
+
+## 3) Estrutura do Monorepo
+
+\`\`\`
+/
+├── backend/          # FastAPI + PostgreSQL
+│   ├── app/          # Código principal
+│   ├── alembic/      # Migrations (17 versões)
+│   ├── tests/        # Pytest
+│   └── AGENTS.md     # Diretrizes backend
+├── frontend/         # Next.js + TypeScript
+│   ├── src/          # Código fonte
+│   │   ├── app/      # App Router (pages)
+│   │   ├── components/
+│   │   ├── features/
+│   │   └── lib/
+│   └── AGENTS.md     # Diretrizes frontend
+├── docs/             # Documentação
+│   ├── features/     # Especificações de funcionalidades
+│   └── *.md          # Regras de negócio
+├── docker-compose.yml
+├── Makefile          # Comandos úteis
+└── README.md         # Guia de início rápido
+\`\`\`
+
+---
+
+## 4) Como Rodar
+
+\`\`\`bash
+# Subir tudo (backend + frontend + postgres)
+docker compose up --build
+
+# Acessos:
+# - Frontend: http://localhost:3000
+# - Backend:  http://localhost:8000
+# - API Docs: http://localhost:8000/docs
+\`\`\`
+
+---
+
+## 5) Autenticação
+
+- JWT access-only em cookie \`httpOnly\`
+- Allowlist de sessões com \`jti\` para revogação real
+- CORS com \`allow_credentials=True\` e origins restritos
+- Em dev: \`secure=False\`; em prod: \`secure=True\`
+
+---
+
+## 6) Convenções de Ambiente
+
+| Variável | Descrição |
+|----------|-----------|
+| \`DATABASE_URL\` | PostgreSQL connection string |
+| \`JWT_SECRET\` | Chave para assinar tokens |
+| \`CORS_ORIGINS\` | Origins permitidos (comma-separated) |
+| \`NEXT_PUBLIC_API_BASE\` | URL base da API para o browser |
+
+- \`.env.example\` sempre atualizado
+- Nunca commitar \`.env\` real
+
+---
+
+## 7) Padrões de Contribuição
 
 ### Commits e PRs
-- PRs pequenos e focados (Foundation -> Docker -> CI -> API -> WEB -> Polish).
-- Cada PR deve incluir:
-  - **O que foi feito**
-  - **Como testar**
-  - Checklist (lint/test/build)
-- Sem “mega PR” com 200 arquivos misturados.
+- PRs pequenos e focados
+- Cada PR deve incluir: o que foi feito + como testar
+- Sem "mega PR" com 200 arquivos misturados
+
+### Qualidade
+- Nada de código "mágico" sem documentação
+- Funções pequenas, nomes óbvios
+- Nenhum warning novo (lint/typecheck/test)
 
 ### Reprodutibilidade
-- Tudo que rodar local deve rodar no Docker.
-- `.env.example` sempre atualizado.
-- `README.md` deve permitir rodar sem adivinhação.
+- Tudo que rodar local deve rodar no Docker
+- README permite rodar sem adivinhação
 
-## Convenções de config e env
-- Variáveis do backend no `.env` (ex.: `JWT_SECRET`, `CORS_ORIGINS`, `DATABASE_URL`)
-- Variáveis expostas ao browser **obrigatoriamente** com prefixo `NEXT_PUBLIC_` (ex.: `NEXT_PUBLIC_API_BASE`)
-- Nunca commitar `.env` real
-- PostgreSQL: `DATABASE_URL=postgresql://user:pass@db:5432/dbname`
+---
 
-## Segurança (mínimo aceitável)
-- JWT em cookie `httpOnly`
-- CORS com `allow_credentials=True` e origins restritos
-- Em dev, `secure=False` no cookie; em produção, `secure=True`
-- Evitar colocar tokens em `localStorage`
+## 8) Definition of Done
 
-## Logging e erros
-- Backend: mensagens de erro claras, sem vazar segredos
-- Frontend: estados de erro com fallback e “tentar novamente”
-
-## Testes (mínimo)
-- Backend: fluxo auth v1 + RBAC + smoke `/me` e `/admin`
-- Frontend: pelo menos validação de lint/typecheck/build; testes UI opcionais por enquanto
-
-## Definition of Done (DoD)
-- `docker compose up --build` funciona (backend + frontend + PostgreSQL)
-- Migrations do Alembic aplicadas automaticamente
-- CI verde (lint/test/build)
-- Fluxo login + `/api/v1/me/*` funcionando
-- Docs atualizadas (quando houver mudança de uso/ambiente)
+- [ ] \`docker compose up --build\` funciona
+- [ ] Migrations aplicadas automaticamente
+- [ ] CI verde (lint/test/build)
+- [ ] Fluxo login + portal funcionando
+- [ ] Docs atualizadas quando necessário
