@@ -82,6 +82,22 @@ fi
 cd "$(dirname "$0")"
 print_info "Diretório: $(pwd)"
 
+# ═══════════════════════════════════════════════════════════════
+# VERIFICAR E CRIAR .env
+# ═══════════════════════════════════════════════════════════════
+if [ ! -f ".env" ]; then
+    print_step "Criando arquivo .env a partir do .env.example..."
+    if [ -f ".env.example" ]; then
+        cp .env.example .env
+        print_success "Arquivo .env criado com sucesso"
+    else
+        print_error "Arquivo .env.example não encontrado"
+        exit 1
+    fi
+else
+    print_info "Arquivo .env já existe"
+fi
+
 if [ "$NO_RESET" = false ]; then
     # ═══════════════════════════════════════════════════════════════
     # ETAPA 1: Parar containers
@@ -207,10 +223,37 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════
-# ETAPA 6: Resumo
+# INICIAR FRONTEND
 # ═══════════════════════════════════════════════════════════════
 if [ "$NO_RESET" = false ]; then
-    print_step "6/6 - Resumo"
+    print_step "6/7 - Iniciando frontend..."
+else
+    print_step "Iniciando frontend..."
+fi
+
+docker compose up -d web
+print_success "Frontend iniciado"
+
+# Aguardar frontend ficar pronto
+print_info "Aguardando frontend ficar disponível..."
+RETRIES=30
+until curl -s http://localhost:3000 > /dev/null 2>&1; do
+    RETRIES=$((RETRIES - 1))
+    if [ $RETRIES -le 0 ]; then
+        print_info "Frontend pode demorar alguns segundos para responder (build inicial)"
+        break
+    fi
+    echo -n "."
+    sleep 2
+done
+echo ""
+print_success "Frontend disponível"
+
+# ═══════════════════════════════════════════════════════════════
+# ETAPA 7: Resumo
+# ═══════════════════════════════════════════════════════════════
+if [ "$NO_RESET" = false ]; then
+    print_step "7/7 - Resumo"
 else
     print_step "Resumo"
 fi
@@ -237,12 +280,18 @@ echo -e "  ${YELLOW}Alunos (exemplo):${NC}"
 echo -e "    Email: <nome>.<sobrenome>.<ra>@a.fecaf.com.br"
 echo -e "    Senha: <nome>@<ra>"
 echo ""
-echo -e "${CYAN}Serviços:${NC}"
-echo -e "  Backend API: http://localhost:8000"
-echo -e "  Swagger:     http://localhost:8000/docs"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}📌 URLs dos Serviços:${NC}"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "  🌐 Frontend:     ${GREEN}http://localhost:3000${NC}"
+echo -e "  🔧 Backend API:  ${GREEN}http://localhost:8000${NC}"
+echo -e "  📚 Swagger:      ${GREEN}http://localhost:8000/docs${NC}"
 echo ""
-echo -e "${CYAN}Comandos úteis:${NC}"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}🔧 Comandos úteis:${NC}"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "  docker compose logs -f api     # Ver logs do backend"
-echo -e "  docker compose up -d web       # Subir frontend"
+echo -e "  docker compose logs -f web     # Ver logs do frontend"
+echo -e "  docker compose ps              # Status dos containers"
 echo -e "  docker compose down            # Parar tudo"
 echo ""
