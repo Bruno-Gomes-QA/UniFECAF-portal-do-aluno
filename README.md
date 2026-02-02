@@ -37,10 +37,25 @@ chmod +x start_and_seed.sh
 
 ### Credenciais de Teste
 
-| Role | Email | Senha |
-|------|-------|-------|
-| **Admin** | `admin@unifecaf.edu.br` | `Admin@123` |
-| **Aluno** | `joao.silva@unifecaf.edu.br` | `Aluno@123` |
+#### 👤 Administradores
+
+| Email | Senha | Tipo |
+|-------|-------|------|
+| `bruno.gomes@fecaf.com.br` | `bruno123@` | Super Admin |
+| `ellen.santos@fecaf.com.br` | `ellen123@` | Admin |
+| `eloa.lisboa@fecaf.com.br` | `eloa123@` | Admin |
+| `alan.marcon@fecaf.com.br` | `alan123@` | Admin |
+| `thiago.lopez@fecaf.com.br` | `thiago123@` | Admin |
+| `osvaldo.silva@fecaf.com.br` | `osvaldo123@` | Admin |
+
+#### 🎓 Alunos (300 gerados automaticamente)
+
+**Padrão de email:** `<nome>.<sobrenome>.<ra>@a.fecaf.com.br`  
+**Padrão de senha:** `<nome>@<ra>`
+
+**Exemplo:**
+- Email: `joao.silva.108775@a.fecaf.com.br`
+- Senha: `joao@108775`
 
 ---
 
@@ -204,13 +219,6 @@ docker compose ps             # Status dos containers
 # Reset completo (limpa tudo e reexecuta seed)
 ./start_and_seed.sh           # Roda reset automático
 
-# Makefile (atalhos)
-make up                       # Subir containers
-make down                     # Parar containers
-make logs-api                 # Ver logs do backend
-make logs-web                 # Ver logs do frontend
-make shell-api                # Shell no container backend
-make shell-web                # Shell no container frontend
 ```
 
 ---
