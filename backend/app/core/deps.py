@@ -109,7 +109,7 @@ AdminUser = Annotated[User, Depends(require_role(UserRole.ADMIN))]
 
 
 def pagination_params(
-    limit: Annotated[int, Query(ge=1, le=100, description="Número máximo de itens.")] = 20,
+    limit: Annotated[int, Query(ge=1, le=500, description="Número máximo de itens.")] = 20,
     offset: Annotated[int, Query(ge=0, description="Offset para paginação.")] = 0,
 ) -> dict[str, int]:
     return {"limit": limit, "offset": offset}

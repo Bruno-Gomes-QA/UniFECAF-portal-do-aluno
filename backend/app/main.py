@@ -21,7 +21,9 @@ from app.core.errors import (
 from app.routers import health_router
 from app.routers.v1 import (
     admin_academics_router,
+    admin_audit_router,
     admin_comm_router,
+    admin_dashboard_router,
     admin_documents_router,
     admin_finance_router,
     admin_users_router,
@@ -77,6 +79,7 @@ app = FastAPI(
         {"name": "Admin - Finance", "description": "Administração financeira (invoices/payments)."},
         {"name": "Admin - Comm", "description": "Notificações e preferências."},
         {"name": "Admin - Documents", "description": "Documentos de alunos."},
+        {"name": "Admin - Audit", "description": "Logs de auditoria do sistema."},
     ],
 )
 
@@ -104,6 +107,8 @@ app.include_router(admin_academics_router)
 app.include_router(admin_finance_router)
 app.include_router(admin_comm_router)
 app.include_router(admin_documents_router)
+app.include_router(admin_audit_router)
+app.include_router(admin_dashboard_router)
 
 
 @app.get("/")

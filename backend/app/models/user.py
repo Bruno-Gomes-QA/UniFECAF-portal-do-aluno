@@ -6,7 +6,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, String, func
+from sqlalchemy import Boolean, DateTime, Enum, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -17,7 +17,6 @@ class UserRole(str, enum.Enum):
     """User roles."""
 
     STUDENT = "STUDENT"
-    STAFF = "STAFF"
     ADMIN = "ADMIN"
 
 
@@ -55,13 +54,19 @@ class User(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    is_superadmin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     # Relationships
     student: Mapped["Student"] = relationship(  # noqa: F821
-        "Student", back_populates="user", uselist=False
+        "Student",
+        back_populates="user",
+        uselist=False,
     )
     notifications: Mapped[list["UserNotification"]] = relationship(  # noqa: F821
-        "UserNotification", back_populates="user"
+        "UserNotification",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     def __repr__(self) -> str:

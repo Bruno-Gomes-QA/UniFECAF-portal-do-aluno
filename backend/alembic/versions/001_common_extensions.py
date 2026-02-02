@@ -52,7 +52,7 @@ def downgrade() -> None:
     """Drop common utilities, schemas and extensions."""
     op.execute("DROP FUNCTION IF EXISTS common.set_updated_at CASCADE")
     op.execute("DROP SCHEMA IF EXISTS audit CASCADE")
-    op.execute("DROP SCHEMA IF NOT EXISTS documents CASCADE")
+    op.execute("DROP SCHEMA IF EXISTS documents CASCADE")
     op.execute("DROP SCHEMA IF EXISTS comm CASCADE")
     op.execute("DROP SCHEMA IF EXISTS finance CASCADE")
     op.execute("DROP SCHEMA IF EXISTS academics CASCADE")

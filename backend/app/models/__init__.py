@@ -8,6 +8,7 @@ from app.models.academics import (
     AttendanceRecord,
     ClassSession,
     Course,
+    DegreeType,
     FinalGrade,
     Section,
     SectionEnrollment,
@@ -33,6 +34,7 @@ __all__ = [
     "JwtSession",
     # Academics
     "Course",
+    "DegreeType",
     "Term",
     "Subject",
     "Student",

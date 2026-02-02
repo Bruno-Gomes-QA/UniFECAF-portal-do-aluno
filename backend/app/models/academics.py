@@ -53,16 +53,43 @@ class FinalStatus(str, enum.Enum):
     FAILED = "FAILED"
 
 
+class StudentStatus(str, enum.Enum):
+    """Student status."""
+
+    ACTIVE = "ACTIVE"
+    LOCKED = "LOCKED"
+    GRADUATED = "GRADUATED"
+    DELETED = "DELETED"
+
+
+class DegreeType(str, enum.Enum):
+    """Degree type for courses."""
+
+    TECNOLOGO = "TECNOLOGO"
+    BACHARELADO = "BACHARELADO"
+    LICENCIATURA = "LICENCIATURA"
+    TECNICO = "TECNICO"
+    POS_GRADUACAO = "POS_GRADUACAO"
+
+
 class Course(Base):
-    """Course model."""
+    """Course model with business rules."""
 
     __tablename__ = "courses"
-    __table_args__ = {"schema": "academics"}
+    __table_args__ = (
+        CheckConstraint("duration_terms >= 1 AND duration_terms <= 20", name="ck_courses_duration"),
+        {"schema": "academics"},
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name: Mapped[str] = mapped_column(String, nullable=False)
-    degree_type: Mapped[str | None] = mapped_column(String, nullable=True)
-    duration_terms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    code: Mapped[str] = mapped_column(String(10), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    degree_type: Mapped[DegreeType] = mapped_column(
+        Enum(DegreeType, name="degree_type", schema="academics"),
+        nullable=False,
+    )
+    duration_terms: Mapped[int] = mapped_column(Integer, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -101,11 +128,12 @@ class Term(Base):
 
 
 class Subject(Base):
-    """Subject/discipline model."""
+    """Subject/discipline model with business rules."""
 
     __tablename__ = "subjects"
     __table_args__ = (
         UniqueConstraint("course_id", "code", name="uq_subjects_course_code"),
+        CheckConstraint("credits >= 1 AND credits <= 20", name="ck_subjects_credits"),
         {"schema": "academics"},
     )
 
@@ -113,9 +141,10 @@ class Subject(Base):
     course_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("academics.courses.id", ondelete="CASCADE"), nullable=False
     )
-    code: Mapped[str] = mapped_column(String, nullable=False)
-    name: Mapped[str] = mapped_column(String, nullable=False)
-    credits: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    code: Mapped[str] = mapped_column(String(20), nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    credits: Mapped[int] = mapped_column(Integer, nullable=False, default=4)
+    term_number: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -137,7 +166,7 @@ class Student(Base):
 
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("auth.users.id", ondelete="CASCADE"),
+        ForeignKey("auth.users.id", ondelete="RESTRICT"),
         primary_key=True,
     )
     ra: Mapped[str] = mapped_column(String, unique=True, nullable=False)
@@ -155,6 +184,13 @@ class Student(Base):
     total_progress: Mapped[Decimal] = mapped_column(
         Numeric(5, 2), nullable=False, default=Decimal("0.00")
     )
+    status: Mapped[StudentStatus] = mapped_column(
+        Enum(StudentStatus, name="student_status", schema="academics"),
+        nullable=False,
+        default=StudentStatus.ACTIVE,
+    )
+    graduation_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -163,12 +199,19 @@ class Student(Base):
     )
 
     # Relationships
-    user: Mapped["User"] = relationship("User", back_populates="student")  # noqa: F821
+    user: Mapped["User"] = relationship(
+        "User", back_populates="student", passive_deletes=True
+    )  # noqa: F821
     course: Mapped[Course] = relationship("Course", back_populates="students")
     enrollments: Mapped[list["SectionEnrollment"]] = relationship(
         "SectionEnrollment", back_populates="student"
     )
     final_grades: Mapped[list["FinalGrade"]] = relationship("FinalGrade", back_populates="student")
+    invoices: Mapped[list["Invoice"]] = relationship("Invoice", back_populates="student")
+
+
+# Import for type hints - avoid circular import
+from app.models.finance import Invoice  # noqa: E402, F401
 
 
 class Section(Base):
@@ -201,14 +244,20 @@ class Section(Base):
     term: Mapped[Term] = relationship("Term", back_populates="sections")
     subject: Mapped[Subject] = relationship("Subject", back_populates="sections")
     enrollments: Mapped[list["SectionEnrollment"]] = relationship(
-        "SectionEnrollment", back_populates="section"
+        "SectionEnrollment", back_populates="section", passive_deletes=True
     )
     meetings: Mapped[list["SectionMeeting"]] = relationship(
-        "SectionMeeting", back_populates="section"
+        "SectionMeeting", back_populates="section", passive_deletes=True
     )
-    sessions: Mapped[list["ClassSession"]] = relationship("ClassSession", back_populates="section")
-    assessments: Mapped[list["Assessment"]] = relationship("Assessment", back_populates="section")
-    final_grades: Mapped[list["FinalGrade"]] = relationship("FinalGrade", back_populates="section")
+    sessions: Mapped[list["ClassSession"]] = relationship(
+        "ClassSession", back_populates="section", passive_deletes=True
+    )
+    assessments: Mapped[list["Assessment"]] = relationship(
+        "Assessment", back_populates="section", passive_deletes=True
+    )
+    final_grades: Mapped[list["FinalGrade"]] = relationship(
+        "FinalGrade", back_populates="section", passive_deletes=True
+    )
 
 
 class SectionEnrollment(Base):

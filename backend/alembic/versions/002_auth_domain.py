@@ -42,10 +42,16 @@ def upgrade() -> None:
           password_hash   text NOT NULL,
           role            auth.user_role NOT NULL DEFAULT 'STUDENT',
           status          auth.user_status NOT NULL DEFAULT 'ACTIVE',
+          is_superadmin   boolean NOT NULL DEFAULT false,
           created_at      timestamptz NOT NULL DEFAULT now(),
           updated_at      timestamptz NOT NULL DEFAULT now(),
           last_login_at   timestamptz
         )
+    """)
+
+    # Create partial index for superadmin queries
+    op.execute("""
+        CREATE INDEX idx_users_superadmin ON auth.users(id) WHERE is_superadmin = true
     """)
 
     op.execute("""

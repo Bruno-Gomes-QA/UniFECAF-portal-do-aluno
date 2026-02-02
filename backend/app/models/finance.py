@@ -7,7 +7,7 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, Numeric, String, func
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, Integer, Numeric, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -39,6 +39,7 @@ class Invoice(Base):
     __table_args__ = {"schema": "finance"}
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    reference: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
     student_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("academics.students.user_id", ondelete="CASCADE"),
@@ -52,6 +53,14 @@ class Invoice(Base):
     description: Mapped[str] = mapped_column(String, nullable=False, default="Mensalidade")
     due_date: Mapped[date] = mapped_column(Date, nullable=False)
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    fine_rate: Mapped[Decimal] = mapped_column(
+        Numeric(5, 2), nullable=False, default=Decimal("2.00")
+    )
+    interest_rate: Mapped[Decimal] = mapped_column(
+        Numeric(5, 2), nullable=False, default=Decimal("1.00")
+    )
+    installment_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    installment_total: Mapped[int | None] = mapped_column(Integer, nullable=True)
     status: Mapped[InvoiceStatus] = mapped_column(
         Enum(InvoiceStatus, name="invoice_status", schema="finance"),
         nullable=False,
@@ -66,6 +75,12 @@ class Invoice(Base):
 
     # Relationships
     payments: Mapped[list["Payment"]] = relationship("Payment", back_populates="invoice")
+    student: Mapped["Student"] = relationship("Student", back_populates="invoices", lazy="joined")
+    term: Mapped["Term"] = relationship("Term", lazy="joined")
+
+
+# Import for type hints - avoid circular import
+from app.models.academics import Student, Term  # noqa: E402, F401
 
 
 class Payment(Base):
@@ -86,6 +101,7 @@ class Payment(Base):
         nullable=False,
         default=PaymentStatus.AUTHORIZED,
     )
+    method: Mapped[str | None] = mapped_column(String(50), nullable=True)
     provider: Mapped[str | None] = mapped_column(String, nullable=True)
     provider_ref: Mapped[str | None] = mapped_column(String, nullable=True)
     paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -97,4 +113,4 @@ class Payment(Base):
     )
 
     # Relationships
-    invoice: Mapped[Invoice] = relationship("Invoice", back_populates="payments")
+    invoice: Mapped[Invoice] = relationship("Invoice", back_populates="payments", lazy="joined")

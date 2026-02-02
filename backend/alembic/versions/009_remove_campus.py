@@ -1,7 +1,7 @@
 """Remove campus (single-campus decision)
 
 Revision ID: 009_remove_campus
-Revises: 008_seed_data
+Revises: 007_audit_domain
 Create Date: 2026-01-31
 
 Removes academics.campuses and academics.courses.campus_id (we assume single campus).
@@ -13,7 +13,7 @@ from collections.abc import Sequence
 from alembic import op
 
 revision: str = "009_remove_campus"
-down_revision: str | None = "008_seed_data"
+down_revision: str | None = "007_audit_domain"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
