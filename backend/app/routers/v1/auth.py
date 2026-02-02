@@ -56,14 +56,20 @@ def login(
             message="Credenciais inválidas.",
         )
 
-    if user.status != UserStatus.ACTIVE:
+    # RN-U-030: Usuário SUSPENDED não pode fazer login
+    if user.status == UserStatus.SUSPENDED:
         raise_api_error(
             status_code=status.HTTP_403_FORBIDDEN,
-            code="AUTH_USER_INACTIVE",
-            message="Usuário inativo.",
+            code="USER_SUSPENDED",
+            message="Sua conta está suspensa. Entre em contato com a secretaria.",
         )
 
+    # RN-U-031: INVITED pode logar - ativa automaticamente no primeiro login
     now = datetime.now(UTC)
+    if user.status == UserStatus.INVITED:
+        user.status = UserStatus.ACTIVE
+
+    # RN-U-033: Atualiza last_login_at
     user.last_login_at = now
     db.commit()
 

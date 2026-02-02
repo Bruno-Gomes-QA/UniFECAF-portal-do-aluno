@@ -19,6 +19,7 @@ class TermResponse(BaseModel):
     start_date: date
     end_date: date
     is_current: bool
+    sections_count: int = 0
     created_at: datetime
     updated_at: datetime
 
@@ -35,57 +36,126 @@ class TermUpdateRequest(BaseModel):
     start_date: date | None = None
     end_date: date | None = None
     is_current: bool | None = None
+from app.models.academics import DegreeType
 
 
 class CourseResponse(BaseModel):
+    """Course response with aggregations."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
+    code: str
     name: str
-    degree_type: str | None = None
-    duration_terms: int | None = None
+    degree_type: DegreeType
+    duration_terms: int
+    is_active: bool
+    students_count: int = 0
+    subjects_count: int = 0
     created_at: datetime
     updated_at: datetime
 
 
 class CourseCreateRequest(BaseModel):
-    name: str
-    degree_type: str | None = None
-    duration_terms: int | None = Field(None, ge=1)
+    """Create course request. All fields required."""
+
+    code: str = Field(
+        ...,
+        min_length=2,
+        max_length=10,
+        pattern=r"^[A-Z0-9]+$",
+        description="Código único do curso (2-10 caracteres, letras maiúsculas e números)",
+        examples=["ADS", "ADM", "DIR"],
+    )
+    name: str = Field(
+        ...,
+        min_length=3,
+        max_length=200,
+        description="Nome completo do curso",
+        examples=["Análise e Desenvolvimento de Sistemas"],
+    )
+    degree_type: DegreeType = Field(
+        ...,
+        description="Tipo de grau do curso",
+        examples=["TECNOLOGO"],
+    )
+    duration_terms: int = Field(
+        ...,
+        ge=1,
+        le=20,
+        description="Duração em semestres",
+        examples=[5],
+    )
 
 
 class CourseUpdateRequest(BaseModel):
-    name: str | None = None
-    degree_type: str | None = None
-    duration_terms: int | None = Field(None, ge=1)
+    """Update course request. code is immutable."""
+
+    name: str | None = Field(None, min_length=3, max_length=200)
+    degree_type: DegreeType | None = None
+    duration_terms: int | None = Field(None, ge=1, le=20)
 
 
 class SubjectResponse(BaseModel):
+    """Subject response with aggregations."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     course_id: UUID
+    course_name: str = ""
     code: str
     name: str
-    credits: int | None = Field(None, ge=0)
+    credits: int
+    workload_hours: int = 0
+    term_number: int | None = None
     is_active: bool
+    sections_count: int = 0
     created_at: datetime
     updated_at: datetime
 
 
 class SubjectCreateRequest(BaseModel):
+    """Create subject request."""
+
     course_id: UUID
-    code: str
-    name: str
-    credits: int | None = Field(None, ge=0)
-    is_active: bool = True
+    code: str = Field(
+        ...,
+        min_length=2,
+        max_length=20,
+        pattern=r"^[A-Z0-9-]+$",
+        description="Código da disciplina (letras maiúsculas, números e hífen)",
+        examples=["ADS-DWF-001", "MAT-105", "FIS-001"],
+    )
+    name: str = Field(
+        ...,
+        min_length=3,
+        max_length=200,
+        description="Nome da disciplina",
+        examples=["Desenvolvimento Web Fullstack"],
+    )
+    credits: int = Field(
+        ...,
+        ge=1,
+        le=20,
+        description="Quantidade de créditos",
+        examples=[4],
+    )
+    term_number: int | None = Field(
+        None,
+        ge=1,
+        description="Semestre sugerido na grade curricular",
+        examples=[1, 2, 3],
+    )
 
 
 class SubjectUpdateRequest(BaseModel):
+    """Update subject request. code is immutable, course_id only if no sections."""
+
     course_id: UUID | None = None
-    code: str | None = None
-    name: str | None = None
-    credits: int | None = Field(None, ge=0)
+    name: str | None = Field(None, min_length=3, max_length=200)
+    credits: int | None = Field(None, ge=1, le=20)
+    term_number: int | None = Field(None, ge=1)
     is_active: bool | None = None
 
 
@@ -175,7 +245,12 @@ class ClassSessionUpdateRequest(BaseModel):
     is_canceled: bool | None = None
 
 
+# ==================== Student Schemas ====================
+
+
 class StudentResponse(BaseModel):
+    """Response schema for student profile."""
+
     model_config = ConfigDict(from_attributes=True)
 
     user_id: UUID
@@ -184,25 +259,32 @@ class StudentResponse(BaseModel):
     course_id: UUID
     admission_term: UUID | None = None
     total_progress: Decimal
+    status: str  # ACTIVE | LOCKED | GRADUATED | DELETED
+    graduation_date: date | None = None
+    deleted_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 
 
 class StudentCreateRequest(BaseModel):
+    """Request schema for creating a student profile."""
+
     user_id: UUID
-    ra: str
-    full_name: str
+    ra: str | None = Field(None, description="RA auto-generated if not provided")
+    full_name: str = Field(..., min_length=3)
     course_id: UUID
     admission_term: UUID | None = None
     total_progress: Decimal = Field(Decimal("0.00"), ge=0, le=100)
 
 
 class StudentUpdateRequest(BaseModel):
-    ra: str | None = None
-    full_name: str | None = None
+    """Request schema for updating a student profile. user_id and ra are immutable."""
+
+    full_name: str | None = Field(None, min_length=3)
     course_id: UUID | None = None
     admission_term: UUID | None = None
     total_progress: Decimal | None = Field(None, ge=0, le=100)
+    # status removed - use specific endpoints (lock, graduate, delete, reactivate)
 
 
 class EnrollmentResponse(BaseModel):
@@ -228,6 +310,8 @@ class AttendanceResponse(BaseModel):
     id: UUID
     session_id: UUID
     student_id: UUID
+    student_name: str | None = None
+    student_ra: str | None = None
     status: str = Field(..., description="PRESENT | ABSENT | EXCUSED")
     recorded_at: datetime
     created_at: datetime
@@ -282,6 +366,8 @@ class AssessmentGradeResponse(BaseModel):
     id: UUID
     assessment_id: UUID
     student_id: UUID
+    student_name: str | None = None
+    student_ra: str | None = None
     score: Decimal = Field(..., ge=0)
     created_at: datetime
     updated_at: datetime
@@ -303,6 +389,8 @@ class FinalGradeResponse(BaseModel):
     id: UUID
     section_id: UUID
     student_id: UUID
+    student_name: str | None = None
+    student_ra: str | None = None
     final_score: Decimal | None = Field(None, ge=0, le=10)
     absences_count: int = Field(..., ge=0)
     absences_pct: Decimal = Field(..., ge=0, le=100)
