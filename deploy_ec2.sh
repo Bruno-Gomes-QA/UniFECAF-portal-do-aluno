@@ -125,8 +125,8 @@ JWT_EXPIRES_MINUTES=60
 # Cookie config (prod)
 COOKIE_SECURE=false
 COOKIE_SAMESITE=lax
-# CORS Origins para EC2 (incluir IP público + nomes dos serviços Docker)
-CORS_ORIGINS=${FRONTEND_URL},${BACKEND_URL},http://web:3000,http://api:8000
+# CORS Origins - TOTALMENTE ABERTO (aceita qualquer origem)
+CORS_ORIGINS=*
 
 # ==========================
 # Frontend Configuration
