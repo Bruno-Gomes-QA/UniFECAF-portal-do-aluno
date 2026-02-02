@@ -17,11 +17,16 @@ Sistema completo de **Portal Acadêmico** com área do aluno e backoffice admini
 git clone <repo-url>
 cd UniFECAF-portal-do-aluno
 
-# 2. Suba o ambiente (backend + frontend + postgres)
-docker compose up -d
+# 2. Execute o script automatizado (cria .env, sobe tudo e popula dados)
+chmod +x start_and_seed.sh
+./start_and_seed.sh
 
-# 3. Aguarde ~30s para migrations + seed
-# Pronto! Acesse:
+# Pronto! O script vai:
+# ✅ Criar .env automaticamente
+# ✅ Subir PostgreSQL
+# ✅ Subir Backend (FastAPI) com migrations
+# ✅ Popular banco com 300 alunos e dados realistas
+# ✅ Subir Frontend (Next.js)
 ```
 
 | Serviço | URL |
@@ -184,16 +189,26 @@ O seed gera automaticamente:
 ## 🔧 Comandos Úteis
 
 ```bash
-# Docker
-docker compose up -d          # Subir em background
-docker compose down           # Parar
+# Primeira execução (setup completo)
+./start_and_seed.sh           # Configuração inicial + seed
+
+# Gerenciamento dos containers (após primeira execução)
+docker compose up -d          # Subir containers
+docker compose down           # Parar containers
+docker compose restart api    # Reiniciar backend
+docker compose restart web    # Reiniciar frontend
 docker compose logs -f api    # Ver logs do backend
 docker compose logs -f web    # Ver logs do frontend
+docker compose ps             # Status dos containers
 
-# Makefile
-make up                       # Subir tudo
-make down                     # Parar tudo
-make reset                    # Reset completo (db + seed)
+# Reset completo (limpa tudo e reexecuta seed)
+./start_and_seed.sh           # Roda reset automático
+
+# Makefile (atalhos)
+make up                       # Subir containers
+make down                     # Parar containers
+make logs-api                 # Ver logs do backend
+make logs-web                 # Ver logs do frontend
 make shell-api                # Shell no container backend
 make shell-web                # Shell no container frontend
 ```
@@ -202,17 +217,21 @@ make shell-web                # Shell no container frontend
 
 ## 📝 Variáveis de Ambiente
 
-Copie `.env.example` para `.env` e ajuste:
+O script `start_and_seed.sh` cria automaticamente o arquivo `.env` a partir do `.env.example`.
+
+Se precisar ajustar manualmente, edite o `.env`:
 
 ```env
 # Backend
-DATABASE_URL=postgresql://postgres:postgres@db:5432/unifecaf
-JWT_SECRET=sua-chave-secreta-aqui
-CORS_ORIGINS=http://localhost:3000
+DATABASE_URL=postgresql://unifecaf:unifecaf123@db:5432/portal_aluno
+JWT_SECRET=super-secret-key-change-in-production
+CORS_ORIGINS=http://localhost:3000,http://localhost:8000
 
 # Frontend
-NEXT_PUBLIC_API_BASE=http://localhost:8000
+BACKEND_BASE_URL=http://localhost:8000
 ```
+
+**Nota**: Para produção, altere `JWT_SECRET` e `COOKIE_SECURE=true`.
 
 ---
 

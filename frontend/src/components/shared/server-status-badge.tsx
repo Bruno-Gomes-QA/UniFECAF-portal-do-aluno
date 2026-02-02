@@ -27,7 +27,7 @@ export function ServerStatusBadge() {
     backend: 'checking',
     frontend: 'online',
     lastCheck: new Date().toISOString(),
-    backendUrl: process.env.NEXT_PUBLIC_API_BASE || 'http://18.117.33.254:8000',
+    backendUrl: process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000',
     frontendVersion: '1.0.0',
     uptime: '0s',
   });

@@ -14,7 +14,7 @@ type ServerFetchOptions = {
 };
 
 const BACKEND_BASE_URL =
-  process.env.BACKEND_BASE_URL || process.env.NEXT_PUBLIC_API_BASE || 'http://18.117.33.254:8000';
+  process.env.BACKEND_BASE_URL || process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
 
 function cookieHeader() {
   const store = cookies();

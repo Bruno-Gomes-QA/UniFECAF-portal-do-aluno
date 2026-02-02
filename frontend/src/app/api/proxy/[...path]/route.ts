@@ -4,7 +4,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const BACKEND_BASE_URL =
-  process.env.BACKEND_BASE_URL || process.env.NEXT_PUBLIC_API_BASE || 'http://18.117.33.254:8000';
+  process.env.BACKEND_BASE_URL || process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
 
 function safeJoinPath(parts: string[]) {
   if (parts.some((p) => p === '' || p === '.' || p === '..')) {
