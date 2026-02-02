@@ -7,9 +7,9 @@ help:
 	@echo "  logs           - docker compose logs -f"
 	@echo "  api-lint       - ruff format/check"
 	@echo "  api-test       - pytest"
-	@echo "  web-lint       - npm run lint"
-	@echo "  web-typecheck  - npm run typecheck"
-	@echo "  web-build      - npm run build"
+	@echo "  web-lint       - bun run lint"
+	@echo "  web-typecheck  - bun run typecheck"
+	@echo "  web-build      - bun run build"
 
 up:
 	docker compose up --build
@@ -21,16 +21,16 @@ logs:
 	docker compose logs -f
 
 api-lint:
-	cd apps/api && ruff format . && ruff check .
+	cd backend && ruff format . && ruff check .
 
 api-test:
-	cd apps/api && pytest
+	cd backend && pytest
 
 web-lint:
-	cd apps/web && npm run lint
+	cd frontend && bun run lint
 
 web-typecheck:
-	cd apps/web && npm run typecheck
+	cd frontend && bun run typecheck
 
 web-build:
-	cd apps/web && npm run build
+	cd frontend && bun run build

@@ -1,95 +1,157 @@
-# AGENTS.md (backend/)
+# AGENTS.md — UniFECAF Portal do Aluno (Backend FastAPI)
 
-Regras e padrões específicos do **backend FastAPI (Python)**.
+Diretrizes para agentes LLM e contribuidores no backend **FastAPI + PostgreSQL**.
 
-## Objetivo do backend
-- Expor uma API segura e bem documentada (Swagger em `/docs`)
-- Autenticação via **JWT access-only** em cookie `access_token` (httpOnly)
-- Revogação real de sessão via allowlist `auth.jwt_sessions` (`jti`)
-- PostgreSQL gerenciado com **Alembic** desde o início
+---
 
-## Contrato de rotas
+## 1) Visão Geral
+
+| Item | Tecnologia |
+|------|------------|
+| Framework | FastAPI + Uvicorn |
+| Linguagem | Python 3.12 |
+| ORM | SQLAlchemy 2.0 |
+| Migrations | Alembic |
+| Validação | Pydantic v2 |
+| Banco | PostgreSQL 16 |
+| Linter | Ruff |
+| Testes | Pytest |
+
+### Autenticação
+- JWT access-only em cookie `access_token` (httpOnly)
+- Allowlist de sessões em `auth.jwt_sessions` com `jti`
+- Revogação real de token no logout
+
+---
+
+## 2) Estrutura de Pastas
+
+\`\`\`
+backend/
+├── app/
+│   ├── core/
+│   │   ├── config.py       # Settings (pydantic-settings)
+│   │   ├── database.py     # Engine + SessionLocal + get_db
+│   │   ├── deps.py         # Dependencies: current_user, admin, pagination
+│   │   ├── errors.py       # Envelope de erro + handlers
+│   │   └── security.py     # bcrypt + JWT (sub/jti/exp)
+│   ├── db/
+│   │   └── utils.py        # Helpers de CRUD e paginação
+│   ├── models/             # SQLAlchemy models
+│   │   ├── academics.py    # Student, Course, Subject, Section, etc.
+│   │   ├── auth.py         # JwtSession
+│   │   ├── audit.py        # AuditLog
+│   │   ├── documents.py    # StudentDocument
+│   │   ├── finance.py      # Invoice, Payment
+│   │   ├── notifications.py # Notification, UserNotification
+│   │   └── user.py         # User
+│   ├── routers/
+│   │   ├── health.py       # GET /health
+│   │   └── v1/             # API versionada
+│   │       ├── auth.py     # /api/v1/auth/*
+│   │       ├── me.py       # /api/v1/me/* (portal aluno)
+│   │       ├── admin_*.py  # /api/v1/admin/* (backoffice)
+│   │       └── __init__.py
+│   ├── schemas/            # Pydantic request/response
+│   └── main.py             # FastAPI app
+├── alembic/
+│   └── versions/           # 17 migrations
+├── tests/                  # Pytest
+├── seed_data.py            # Script de seed (300 alunos, 5 semestres)
+└── requirements.txt
+\`\`\`
+
+---
+
+## 3) Contrato de Rotas
 
 ### Infra
-- `GET /health` (verifica conectividade com Postgres)
+- \`GET /health\` — Verifica conectividade com Postgres
 
 ### Auth (v1)
-- `POST /api/v1/auth/login` → **204** + `Set-Cookie: access_token=...`
-- `POST /api/v1/auth/logout` → **204** (revoga sessão + remove cookie)
-- `GET  /api/v1/auth/me`
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST | \`/api/v1/auth/login\` | 204 + Set-Cookie |
+| POST | \`/api/v1/auth/logout\` | 204 (revoga sessão) |
+| GET | \`/api/v1/auth/me\` | Usuário autenticado |
 
-### Portal do aluno (/me)
-- `GET  /api/v1/me/profile`
-- `GET  /api/v1/me/today-class` (regra “1 aula por dia”, robusto com `warnings[]`)
-- `GET  /api/v1/me/academic/summary`
-- `GET  /api/v1/me/financial/summary`
-- `GET  /api/v1/me/financial/invoices` (paginado)
-- `POST /api/v1/me/financial/invoices/{invoice_id}/pay-mock`
-- `GET  /api/v1/me/notifications` (paginado + `unread_only`)
-- `GET  /api/v1/me/notifications/unread-count`
-- `POST /api/v1/me/notifications/{user_notification_id}/read|unread|archive`
-- `GET  /api/v1/me/documents`
-- `POST /api/v1/me/documents/{doc_type}/request`
-- `GET  /api/v1/me/documents/{doc_type}/download`
+### Portal do Aluno (/me)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | \`/api/v1/me/profile\` | Perfil do aluno |
+| PATCH | \`/api/v1/me/profile\` | Atualizar telefone |
+| GET | \`/api/v1/me/today-class\` | Aula do dia |
+| GET | \`/api/v1/me/schedule/today\` | Agenda do dia |
+| GET | \`/api/v1/me/schedule/week\` | Agenda da semana |
+| GET | \`/api/v1/me/academic/summary\` | Resumo acadêmico |
+| GET | \`/api/v1/me/enrollments\` | Matrículas do termo |
+| GET | \`/api/v1/me/grades\` | Notas detalhadas |
+| GET | \`/api/v1/me/attendance\` | Frequência |
+| GET | \`/api/v1/me/transcript\` | Histórico escolar |
+| GET | \`/api/v1/me/financial/summary\` | Resumo financeiro |
+| GET | \`/api/v1/me/financial/invoices\` | Boletos (paginado) |
+| POST | \`/api/v1/me/financial/invoices/{id}/pay-mock\` | Simular pagamento |
+| GET | \`/api/v1/me/notifications\` | Notificações (paginado) |
+| GET | \`/api/v1/me/notifications/unread-count\` | Contagem não lidas |
+| POST | \`/api/v1/me/notifications/{id}/read\` | Marcar como lida |
+| POST | \`/api/v1/me/notifications/{id}/unread\` | Marcar como não lida |
+| POST | \`/api/v1/me/notifications/{id}/archive\` | Arquivar |
+| GET | \`/api/v1/me/documents\` | Lista documentos |
+| POST | \`/api/v1/me/documents/{type}/request\` | Solicitar documento |
+| GET | \`/api/v1/me/documents/{type}/download\` | Baixar documento |
 
-### Admin (exige `ADMIN`)
-- CRUD acadêmico: terms, courses, subjects, sections, meetings, sessions, students, enrollments, attendance, assessments, assessment-grades, final-grades
-- Financeiro: invoices, payments + `POST /api/v1/admin/invoices/{invoice_id}/mark-paid`
-- Comunicação: notifications + deliver + user-notifications + preferences
-- Documentos: student-documents
+### Admin (exige role ADMIN)
+- **Usuários**: CRUD \`/api/v1/admin/users\`
+- **Alunos**: CRUD \`/api/v1/admin/students\`
+- **Acadêmico**: terms, courses, subjects, sections, meetings, sessions, enrollments, attendance, assessments, grades
+- **Financeiro**: invoices, payments, mark-paid
+- **Comunicação**: notifications, deliver, user-notifications, preferences
+- **Documentos**: student-documents
+- **Auditoria**: audit-logs
+- **Dashboard**: stats por termo
 
-### Compatibilidade
-- Não manter rotas legacy (usar apenas `/api/v1/*`).
+---
 
-## Estrutura do código (atual)
-```txt
-backend/
-├── app
-│   ├── core
-│   │   ├── config.py      # Settings (pydantic-settings)
-│   │   ├── database.py    # engine + SessionLocal + get_db
-│   │   ├── deps.py        # deps: current_user, admin, pagination
-│   │   ├── errors.py      # envelope de erro + handlers
-│   │   └── security.py    # bcrypt + JWT (sub/jti/exp)
-│   ├── db
-│   │   └── utils.py       # helpers de CRUD/paginação
-│   ├── models             # SQLAlchemy models (schemas do Postgres)
-│   ├── routers
-│   │   ├── v1/            # contrato /api/v1
-│   │   ├── health.py
-│   │   ├── home.py
-│   │   └── auth.py        # legacy
-│   ├── schemas            # Pydantic request/response
-│   └── main.py
-├── alembic
-│   └── versions
-└── tests
-```
+## 4) Padrões de API
 
-## Padrões de API
-- Prefixo: `/api/v1/*`
-- Paginação padrão: `limit` (1..100) e `offset` (>=0)
-- Erros sempre em envelope:
-```json
-{ "error": { "code": "SOME_CODE", "message": "Mensagem", "details": {} } }
-```
-- **Weekday convention** (academics.section_meetings): `0=Domingo ... 6=Sábado`
+### Paginação
+\`\`\`
+?limit=20&offset=0
+\`\`\`
+- \`limit\`: 1..100 (default: 20)
+- \`offset\`: >= 0 (default: 0)
 
-## Segurança (mínimo aceitável)
-- Cookie `access_token`: `httponly=True`, `samesite=lax` (dev), `secure=False` (dev)
-- CORS: `allow_credentials=True` e origins restritos (nunca `*`)
-- Nunca colocar tokens em `localStorage`
-- Não logar segredos/cookies/tokens
+### Envelope de Erro
+\`\`\`json
+{
+  "error": {
+    "code": "SOME_CODE",
+    "message": "Mensagem amigável",
+    "details": {}
+  }
+}
+\`\`\`
 
-## Testes (mínimo)
-Obrigatório manter verde:
-- Auth v1: login/me/logout
-- RBAC: student bloqueado em `/api/v1/admin/*`
-- Flows `/me`: notifications, pay-mock, documents
-- Admin smoke: criação de semestre mínimo + validação de conflito de agenda
+### Convenções SQLAlchemy
+- Usar \`.is_(True)\` e \`.is_(False)\` ao invés de \`== True\` / \`== False\`
+- Weekday: \`0=Domingo ... 6=Sábado\`
 
-## Qualidade
-Deve passar:
-- `ruff check .`
-- `ruff format --check .`
-- `pytest`
+---
+
+## 5) Segurança
+
+- Cookie \`access_token\`: \`httponly=True\`, \`samesite=lax\`, \`secure=False\` (dev)
+- CORS: \`allow_credentials=True\`, origins restritos (nunca \`*\`)
+- Nunca logar tokens/cookies/segredos
+- RBAC: validar \`user.role\` em cada endpoint admin
+
+---
+
+## 6) Checklist de Qualidade
+
+- [ ] \`ruff check .\` sem erros
+- [ ] \`ruff format --check .\` ok
+- [ ] \`pytest\` verde
+- [ ] Migrations aplicáveis (\`alembic upgrade head\`)
+- [ ] Schemas Pydantic para request/response
+- [ ] Erros com código + mensagem clara

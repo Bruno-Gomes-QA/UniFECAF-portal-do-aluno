@@ -50,7 +50,8 @@ services:
       dockerfile: Dockerfile
     container_name: unifecaf-web
     environment:
-      NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://localhost:8000}
+      # Server-side calls (SSR + BFF proxy)
+      BACKEND_BASE_URL: ${BACKEND_BASE_URL:-http://api:8000}
     ports:
       - "3000:3000"
     depends_on:

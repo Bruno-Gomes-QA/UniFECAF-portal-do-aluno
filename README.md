@@ -1,69 +1,256 @@
-# UniFECAF Portal do Aluno
+# 🎓 UniFECAF Portal do Aluno
 
-Bem-vindo(a)! Este repositório é um **monorepo** com:
-- `backend/`: API **FastAPI** + **PostgreSQL** (Alembic + SQLAlchemy 2.0 + Pydantic v2)
-- `frontend/`: **Next.js** + TypeScript (Bun)
+Sistema completo de **Portal Acadêmico** com área do aluno e backoffice administrativo.
 
-## Rodando com Docker (recomendado)
+![Docker](https://img.shields.io/badge/Docker-Ready-blue?logo=docker)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi)
+![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql)
+![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?logo=typescript)
+
+---
+
+## 🚀 Quick Start
 
 ```bash
-cp .env.example .env
-docker compose up --build
+# 1. Clone e entre na pasta
+git clone <repo-url>
+cd UniFECAF-portal-do-aluno
+
+# 2. Suba o ambiente (backend + frontend + postgres)
+docker compose up -d
+
+# 3. Aguarde ~30s para migrations + seed
+# Pronto! Acesse:
 ```
 
-Acesse:
-- Web: `http://localhost:3000`
-- API: `http://localhost:8000`
-- Swagger (OpenAPI): `http://localhost:8000/docs`
+| Serviço | URL |
+|---------|-----|
+| **Frontend** | http://localhost:3000 |
+| **Backend API** | http://localhost:8000 |
+| **API Docs (Swagger)** | http://localhost:8000/docs |
 
-### Credenciais de demo (seed)
-- Admin: `admin@unifecaf.edu.br` / `admin123`
-- Aluno: `demo@unifecaf.edu.br` / `demo123`
+### Credenciais de Teste
 
-## O que tem no backend
+| Role | Email | Senha |
+|------|-------|-------|
+| **Admin** | `admin@unifecaf.edu.br` | `Admin@123` |
+| **Aluno** | `joao.silva@unifecaf.edu.br` | `Aluno@123` |
 
-### Autenticação (cookie httpOnly)
-- JWT access-only em cookie `access_token` (httpOnly)
-- Allowlist de sessões (`auth.jwt_sessions`) com `jti` para logout real
-- CORS com `allow_credentials=True` e origins restritos
+---
 
-### Endpoints principais
-- Health: `GET /health`
-- Auth v1:
-  - `POST /api/v1/auth/login` (204 + Set-Cookie)
-  - `POST /api/v1/auth/logout` (204)
-  - `GET  /api/v1/auth/me`
-- Portal do aluno:
-  - `GET  /api/v1/me/profile`
-  - `GET  /api/v1/me/today-class`
-  - `GET  /api/v1/me/academic/summary`
-  - `GET  /api/v1/me/financial/summary`
-  - `GET  /api/v1/me/financial/invoices`
-  - `POST /api/v1/me/financial/invoices/{invoice_id}/pay-mock`
-  - `GET  /api/v1/me/notifications`
-  - `GET  /api/v1/me/notifications/unread-count`
-  - `POST /api/v1/me/notifications/{user_notification_id}/read|unread|archive`
-  - `GET  /api/v1/me/documents`
-  - `POST /api/v1/me/documents/{doc_type}/request`
-  - `GET  /api/v1/me/documents/{doc_type}/download`
-- Admin (exige `ADMIN`):
-  - CRUD: users, students, terms, courses, subjects, sections, meetings, sessions, enrollments, attendance, assessments, grades
-  - Financeiro: invoices/payments + `mark-paid`
-  - Comunicação: notifications + deliver + preferences
-  - Documentos: student-documents
+## 📋 O Que o Sistema Faz
 
-## Ambiente (.env)
+### Portal do Aluno (área logada)
 
-Copie `.env.example` e ajuste se necessário:
-- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
-- `DATABASE_URL` (formato: `postgresql://user:pass@db:5432/dbname`)
-- `JWT_SECRET`
-- `CORS_ORIGINS` (separado por vírgula)
-- `NEXT_PUBLIC_API_BASE` (frontend)
+| Funcionalidade | Descrição |
+|----------------|-----------|
+| **Home** | Aula do dia + agenda semanal + resumo acadêmico |
+| **Perfil** | Dados pessoais com edição de telefone |
+| **Notas** | Notas por disciplina com média ponderada |
+| **Frequência** | Presenças/faltas por disciplina + gráfico |
+| **Financeiro** | Boletos com status + simulação de pagamento |
+| **Notificações** | Mensagens com filtros (lidas/não lidas/arquivadas) |
+| **Documentos** | Solicitação e download de documentos |
+| **Histórico** | Histórico escolar completo por semestre |
 
-## Qualidade / CI
-- Backend: `ruff check`, `ruff format --check`, `pytest` (com Postgres)
-- Frontend: `bun run lint`, `bun run typecheck`, `bun run build`
+### Backoffice Admin (gestão)
 
-## Docs do projeto
-Veja `docs/backend/BACKEND_GUIDE.md` para arquitetura e contrato de API.
+| Módulo | Funcionalidades |
+|--------|-----------------|
+| **Usuários** | CRUD completo + soft delete + reativação |
+| **Alunos** | CRUD + matrícula + vinculação com usuário |
+| **Acadêmico** | Termos, Cursos, Disciplinas, Turmas, Horários |
+| **Financeiro** | Boletos, Pagamentos, Marcar como pago |
+| **Comunicação** | Notificações + entrega por aluno + preferências |
+| **Documentos** | Gerenciar solicitações de documentos |
+| **Auditoria** | Log de todas as ações com filtros |
+| **Dashboard** | Estatísticas por termo letivo |
+
+---
+
+## 🏗️ Arquitetura
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                         Docker Compose                        │
+├──────────────┬──────────────────────┬────────────────────────┤
+│     web      │         api          │          db            │
+│  (Next.js)   │      (FastAPI)       │    (PostgreSQL 16)     │
+│   :3000      │        :8000         │        :5432           │
+│              │                      │                        │
+│  App Router  │   SQLAlchemy 2.0     │   17 migrations        │
+│  TypeScript  │   Alembic            │   300 alunos seed      │
+│  shadcn/ui   │   Pydantic v2        │   5 semestres dados    │
+│  Tailwind    │   JWT httpOnly       │                        │
+└──────────────┴──────────────────────┴────────────────────────┘
+```
+
+### Stack Técnica
+
+| Camada | Tecnologia | Versão |
+|--------|------------|--------|
+| Frontend | Next.js (App Router) | 14.x |
+| Frontend | TypeScript (strict mode) | 5.x |
+| Frontend | Tailwind CSS + shadcn/ui | latest |
+| Frontend | react-hook-form + zod | latest |
+| Backend | FastAPI + Uvicorn | 0.115.x |
+| Backend | SQLAlchemy + Alembic | 2.0.x |
+| Backend | Pydantic | 2.x |
+| Banco | PostgreSQL | 16 |
+| Runtime | Python | 3.12 |
+| Package Manager | Bun | latest |
+
+---
+
+## 🔐 Segurança
+
+- **Autenticação**: JWT em cookie `httpOnly` (não acessível via JavaScript)
+- **Sessões**: Allowlist com `jti` para revogação real de tokens
+- **CORS**: `allow_credentials=True` com origins restritos
+- **RBAC**: Validação de role em cada endpoint admin
+- **Senhas**: Hash bcrypt com salt
+
+---
+
+## 📁 Estrutura do Projeto
+
+```
+/
+├── backend/
+│   ├── app/
+│   │   ├── core/        # Config, database, security, deps
+│   │   ├── models/      # SQLAlchemy models (7 domínios)
+│   │   ├── routers/v1/  # Endpoints versionados
+│   │   └── schemas/     # Pydantic schemas
+│   ├── alembic/         # 17 migrations
+│   ├── tests/           # Pytest (auth, rbac, smoke)
+│   └── seed_data.py     # Gerador de dados realistas
+├── frontend/
+│   └── src/
+│       ├── app/         # Next.js App Router
+│       │   ├── (auth)/  # Páginas públicas (login)
+│       │   ├── (student)/ # Portal do aluno
+│       │   └── admin/   # Backoffice
+│       ├── components/  # UI components (shadcn/ui)
+│       ├── features/    # Lógica de domínio
+│       └── lib/         # Utils e API client
+├── docs/                # Documentação e specs
+├── docker-compose.yml   # Orquestração
+└── Makefile             # Comandos úteis
+```
+
+---
+
+## 🧪 Testes e Qualidade
+
+```bash
+# Backend
+make lint          # Ruff check + format
+make test          # Pytest
+
+# Frontend
+make lint-web      # ESLint + TypeScript check
+make build-web     # Next.js build
+```
+
+### CI (GitHub Actions)
+
+- ✅ Lint backend (ruff)
+- ✅ Lint frontend (eslint + tsc)
+- ✅ Build frontend (next build)
+- ✅ Testes backend (pytest)
+
+---
+
+## 📊 Dados de Demonstração
+
+O seed gera automaticamente:
+
+| Entidade | Quantidade |
+|----------|------------|
+| Alunos | 300 |
+| Cursos | 2 (ADS, Ciência da Computação) |
+| Disciplinas | 12+ por curso |
+| Termos | 5 semestres |
+| Boletos | ~1800 (6 por aluno) |
+| Notificações | 600+ |
+| Aulas | Horários reais |
+
+**95% dos dados são realistas** — não são mocks estáticos.
+
+---
+
+## 🔧 Comandos Úteis
+
+```bash
+# Docker
+docker compose up -d          # Subir em background
+docker compose down           # Parar
+docker compose logs -f api    # Ver logs do backend
+docker compose logs -f web    # Ver logs do frontend
+
+# Makefile
+make up                       # Subir tudo
+make down                     # Parar tudo
+make reset                    # Reset completo (db + seed)
+make shell-api                # Shell no container backend
+make shell-web                # Shell no container frontend
+```
+
+---
+
+## 📝 Variáveis de Ambiente
+
+Copie `.env.example` para `.env` e ajuste:
+
+```env
+# Backend
+DATABASE_URL=postgresql://postgres:postgres@db:5432/unifecaf
+JWT_SECRET=sua-chave-secreta-aqui
+CORS_ORIGINS=http://localhost:3000
+
+# Frontend
+NEXT_PUBLIC_API_BASE=http://localhost:8000
+```
+
+---
+
+## 🎯 Endpoints da API
+
+### Autenticação
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST | `/api/v1/auth/login` | Login (204 + Set-Cookie) |
+| POST | `/api/v1/auth/logout` | Logout (revoga sessão) |
+| GET | `/api/v1/auth/me` | Usuário atual |
+
+### Portal do Aluno (`/api/v1/me/*`)
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/me/profile` | Perfil do aluno |
+| GET | `/me/today-class` | Aula do dia |
+| GET | `/me/schedule/week` | Agenda da semana |
+| GET | `/me/grades` | Notas |
+| GET | `/me/attendance` | Frequência |
+| GET | `/me/financial/invoices` | Boletos |
+| GET | `/me/notifications` | Notificações |
+| GET | `/me/documents` | Documentos |
+
+### Admin (`/api/v1/admin/*`)
+Documentação completa em http://localhost:8000/docs
+
+---
+
+## 👥 Contribuindo
+
+1. Leia os arquivos `AGENTS.md` (root, backend, frontend)
+2. PRs pequenos e focados
+3. Lint/test/build devem passar
+4. Atualize docs quando necessário
+
+---
+
+## 📄 Licença
+
+Projeto acadêmico — UniFECAF 2025
