@@ -102,10 +102,10 @@ if [ "$NO_RESET" = false ]; then
     # ═══════════════════════════════════════════════════════════════
     # ETAPA 1: Parar containers
     # ═══════════════════════════════════════════════════════════════
-    print_step "1/6 - Parando containers existentes..."
+    print_step "1/6 - Parando containers existentes e removendo imagens locais..."
 
-    docker compose down --remove-orphans 2>/dev/null || true
-    print_success "Containers parados"
+    docker compose down --rmi local --remove-orphans 2>/dev/null || true
+    print_success "Containers e imagens locais removidos"
 
     # ═══════════════════════════════════════════════════════════════
     # ETAPA 2: Remover volumes
@@ -153,9 +153,11 @@ if [ "$NO_RESET" = false ]; then
     # ═══════════════════════════════════════════════════════════════
     # ETAPA 4: Subir backend (aplica migrations automaticamente)
     # ═══════════════════════════════════════════════════════════════
-    print_step "4/6 - Iniciando backend e aplicando migrations..."
+    print_step "4/6 - Iniciando backend (FORCE REBUILD) e aplicando migrations..."
 
-    docker compose up -d --build api
+    # Forçar build sem cache para garantir versão mais recente
+    docker compose build --no-cache api
+    docker compose up -d --force-recreate api
     print_success "Container do backend iniciado"
 
     # Aguardar migrations serem aplicadas
@@ -226,12 +228,13 @@ fi
 # INICIAR FRONTEND
 # ═══════════════════════════════════════════════════════════════
 if [ "$NO_RESET" = false ]; then
-    print_step "6/7 - Iniciando frontend..."
+    print_step "6/7 - Iniciando frontend (FORCE REBUILD)..."
+    docker compose build --no-cache web
 else
     print_step "Iniciando frontend..."
 fi
 
-docker compose up -d web
+docker compose up -d --force-recreate web
 print_success "Frontend iniciado"
 
 # Aguardar frontend ficar pronto

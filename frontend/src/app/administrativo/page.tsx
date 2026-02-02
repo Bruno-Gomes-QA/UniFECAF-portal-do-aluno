@@ -139,7 +139,7 @@ const quickActions = [
   {
     title: 'Documentos',
     description: 'Solicitações',
-    href: '/administrativo/documentos',
+    href: '/administrativo/documentos/documentos-aluno',
     icon: FileCheck,
     color: 'bg-indigo-500',
   },
@@ -170,7 +170,7 @@ const navSections = [
     title: 'Comunicação',
     items: [
       { label: 'Notificações', href: '/administrativo/comunicacao/notificacoes', icon: Bell },
-      { label: 'Documentos', href: '/administrativo/documentos', icon: FileText },
+      { label: 'Documentos', href: '/administrativo/documentos/documentos-aluno', icon: FileText },
     ],
   },
   {

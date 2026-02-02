@@ -361,6 +361,20 @@ export default function StudentHomePage() {
   const greeting = new Date().getHours() < 12 ? 'Bom dia' : new Date().getHours() < 18 ? 'Boa tarde' : 'Boa noite';
   const courseProgress = Number(profile.total_progress);
 
+  // Translate status from English to Portuguese
+  const translateStatus = (status: string): string => {
+    const statusMap: Record<string, string> = {
+      'ACTIVE': 'Ativo',
+      'APPROVED': 'Aprovado',
+      'FAILED': 'Reprovado',
+      'DROPPED': 'Trancado',
+      'IN_PROGRESS': 'Em Andamento',
+      'PENDING': 'Pendente',
+      'COMPLETED': 'Concluído',
+    };
+    return statusMap[status] || status;
+  };
+
   // Quick actions menu
   const quickActions = [
     {
@@ -371,18 +385,18 @@ export default function StudentHomePage() {
       href: '/documentos',
     },
     {
-      title: 'Carteirinha Digital',
-      description: 'Visualizar carteira',
+      title: 'Notas',
+      description: 'Ver notas e desempenho',
       icon: IdCard,
       color: 'bg-green-500',
-      href: '/carteirinha',
+      href: '/notas',
     },
     {
-      title: 'Histórico Acadêmico',
-      description: 'Consultar histórico',
+      title: 'Horários',
+      description: 'Ver horários de aula',
       icon: History,
       color: 'bg-purple-500',
-      href: '/historico',
+      href: '/horarios',
     },
     {
       title: 'Boletos',
@@ -763,7 +777,7 @@ export default function StudentHomePage() {
                         variant={s.has_absence_alert ? 'warning' : 'outline'}
                         className={!s.has_absence_alert ? 'border-muted-foreground/30' : ''}
                       >
-                        {s.status}
+                        {translateStatus(s.status)}
                       </Badge>
                     </TableCell>
                     <TableCell className="pr-5 text-right">
