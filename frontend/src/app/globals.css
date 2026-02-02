@@ -2,73 +2,84 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground: #171717;
-  --background: #f5f5f5;
-  --primary: #1e40af;
-  --primary-light: #3b82f6;
-  --error: #dc2626;
-  --success: #16a34a;
-  --warning: #ca8a04;
-}
+@layer base {
+  :root {
+    /* shadcn tokens (HSL) */
+    --background: 43 19% 93%;
+    --foreground: 0 0% 10%;
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  min-height: 100vh;
-}
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
 
-/* Loading spinner */
-.spinner {
-  border: 3px solid rgba(0, 0, 0, 0.1);
-  border-left-color: var(--primary);
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  animation: spin 0.8s linear infinite;
-}
+    --primary: 218 59% 25%;
+    --primary-foreground: 0 0% 100%;
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+    --secondary: 151 75% 37%;
+    --secondary-foreground: 0 0% 100%;
+
+
+    --muted: 43 19% 90%;
+    --muted-foreground: 0 0% 42%;
+
+    --accent: 189 100% 41%;
+    --accent-foreground: 0 0% 10%;
+
+    --destructive: 345 100% 58%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 43 11% 84%;
+    --input: 43 11% 84%;
+    --ring: 225 67% 44%;
+
+    --radius: 0.75rem;
+
+    /* Brand palette (HSL) */
+    --brand-navy: 218 59% 25%;
+    --brand-cyan: 189 100% 41%;
+    --brand-purple: 261 58% 25%;
+    --brand-success: 151 75% 37%;
+    --brand-success-dark: 150 98% 17%;
+    --brand-success-soft: 97 64% 64%;
+    --brand-warning: 50 92% 49%;
   }
-}
 
-/* Card styles */
-.card {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
-}
+  .dark {
+    --background: 218 28% 10%;
+    --foreground: 0 0% 98%;
 
-/* Status badges */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
+    --card: 218 28% 12%;
+    --card-foreground: 0 0% 98%;
+    --popover: 218 28% 12%;
+    --popover-foreground: 0 0% 98%;
 
-.badge-success {
-  background: #dcfce7;
-  color: #166534;
-}
+    --primary: 225 67% 58%;
+    --primary-foreground: 218 28% 10%;
 
-.badge-warning {
-  background: #fef9c3;
-  color: #854d0e;
-}
+    --secondary: 218 22% 16%;
+    --secondary-foreground: 0 0% 98%;
 
-.badge-error {
-  background: #fee2e2;
-  color: #991b1b;
-}
+    --muted: 218 22% 16%;
+    --muted-foreground: 0 0% 70%;
 
-.badge-info {
-  background: #dbeafe;
-  color: #1e40af;
+    --accent: 189 100% 38%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 345 100% 62%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 218 22% 18%;
+    --input: 218 22% 18%;
+    --ring: 225 67% 58%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    min-height: 100vh;
+  }
 }
