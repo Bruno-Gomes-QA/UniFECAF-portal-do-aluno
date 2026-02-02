@@ -130,23 +130,24 @@ def profile(current_user: CurrentUser, db: Session = Depends(get_db)) -> MeProfi
 
     # Calcular progresso real baseado em semestres concluídos
     total_progress = Decimal("0.00")
-    if course and course.total_terms and course.total_terms > 0:
+    if course and course.duration_terms and course.duration_terms > 0:
         # Contar quantos semestres o aluno já concluiu
         # Um semestre é considerado concluído se o aluno tem pelo menos 1 matrícula APPROVED naquele termo
         from sqlalchemy import func, distinct
         
         completed_terms_count = (
-            db.query(func.count(distinct(SectionEnrollment.term_id)))
+            db.query(func.count(distinct(Section.term_id)))
+            .join(FinalGrade, FinalGrade.section_id == Section.id)
             .filter(
-                SectionEnrollment.student_id == student.user_id,
-                SectionEnrollment.final_status == "APPROVED"
+                FinalGrade.student_id == student.user_id,
+                FinalGrade.status == "APPROVED"
             )
             .scalar()
         ) or 0
         
         # Calcular percentual: (semestres concluídos / total de semestres do curso) * 100
         total_progress = (
-            Decimal(completed_terms_count) / Decimal(course.total_terms) * 100
+            Decimal(completed_terms_count) / Decimal(course.duration_terms) * 100
         )
         
         # Limitar a 100%
