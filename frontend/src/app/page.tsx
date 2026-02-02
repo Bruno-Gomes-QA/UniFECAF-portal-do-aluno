@@ -80,7 +80,7 @@ export default function LandingPage() {
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-muted-foreground uppercase tracking-widest text-xs">Sistemas Operacionais</span>
           </div>
-          <p className="text-sm">© 2024 UniFECAF - Excelência em Educação Digital</p>
+          <p className="text-sm">© 2026 UniFECAF - Excelência em Educação Digital</p>
         </div>
       </div>
     </div>
